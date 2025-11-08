@@ -23,12 +23,11 @@ const applySecurity = require("./middleware/security");
 applySecurity(app);
 
 // --- Core Middleware ---
-app.use(express.json());
 app.use(xss());
 app.use(morgan("dev"));
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://localhost:4000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -44,6 +43,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // --- Routes ---
+app.use(express.json());
 const authMiddleware = require("./middleware/authMiddleware");
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/tasks", require("./routes/tasks"));
@@ -53,7 +53,7 @@ app.use("/api/ai", require("./routes/ai")); // ✅ Gemini route
 
 // --- Health Check ---
 app.get("/", (req, res) => {
-  res.status(200).send("🚀 TaskMate AI Backend (Gemini edition) is live & secure!");
+  res.status(200).send("🚀 TaskMate AI Backend is live & secure!");
 });
 
 // --- Real-time tracking (Socket.io) ---

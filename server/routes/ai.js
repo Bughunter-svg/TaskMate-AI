@@ -1,68 +1,65 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Activity = require('../models/Activity');
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+// 🔐 Initialize Gemini
+const genAI = new GoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
-// 🧠 Route: Generate a daily summary for all users
-router.get('/summary', async (req, res) => {
+// 🧠 Chat endpoint
+router.post("/chat", async (req, res) => {
   try {
-    const activities = await Activity.find();
+    const { username, message } = req.body;
+    if (!message)
+      return res.status(400).json({ success: false, error: "Message is required." });
 
-    // Format data for AI prompt
-    const summaryData = activities.map(a => 
-      `${a.username}: worked on "${a.currentTask}" (${a.fileName}), spent ${a.timeSpent} mins, currently ${a.online ? 'online' : 'offline'}`
-    ).join('\n');
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-You are TaskMate AI, an assistant that summarizes team productivity.
-Summarize today's activity in a friendly, motivating way:
-${summaryData}
-`;
+    You are TaskMate AI, a friendly productivity assistant for developers.
+    The user’s name is ${username}.
+    Message: ${message}
+    Respond briefly but positively, encouraging productivity or answering questions.
+    `;
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "system", content: prompt }],
-      max_tokens: 250
-    });
+    const result = await model.generateContent(prompt);
 
     res.json({
       success: true,
-      summary: response.choices[0].message.content
+      reply: result.response.text(),
     });
-
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error("🔥 Gemini Chat Error:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message || "Something went wrong with the AI request.",
+    });
   }
 });
 
-
-// 💬 Route: Chat with the AI about progress or advice
-router.post('/chat', async (req, res) => {
-  const { message } = req.body;
-
-  if (!message) return res.status(400).json({ success: false, error: "Message required" });
-
+// 📅 Daily summary endpoint
+router.get("/summary", async (req, res) => {
   try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are TaskMate AI, a productivity assistant who helps teams work smart and stay positive." },
-        { role: "user", content: message }
-      ],
-      max_tokens: 200
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `
+    Summarize today's productivity for all team members in a motivational tone.
+    Mention common achievements, teamwork, and what could improve tomorrow.
+    `;
+
+    const result = await model.generateContent(prompt);
 
     res.json({
       success: true,
-      reply: response.choices[0].message.content
+      summary: result.response.text(),
     });
-
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error("🔥 Gemini Summary Error:", err);
+    res.status(500).json({
+      success: false,
+      error: err.message || "Error generating summary.",
+    });
   }
 });
 

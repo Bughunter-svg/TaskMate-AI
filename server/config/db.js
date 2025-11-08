@@ -9,17 +9,28 @@ const connectDB = async () => {
   }
 
   try {
-    // disable SSL completely for local use
     await mongoose.connect(uri, {
-      ssl: false
+      ssl: false,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
     });
 
-    console.log("✅ MongoDB Connected Successfully (SSL disabled for local dev)");
+    console.log("✅ MongoDB Connected Successfully 🚀");
   } catch (err) {
-    console.error("❌ MongoDB Connection Failed:");
-    console.error("🧩 Error Message:", err.message);
-    process.exit(1);
+    console.error("❌ MongoDB Connection Failed:", err.message);
+    setTimeout(connectDB, 5000); // retry after 5s
   }
 };
+
+// Handle connection drops gracefully
+mongoose.connection.on("disconnected", () => {
+  console.log("⚠️ MongoDB disconnected, retrying in 5s...");
+  setTimeout(connectDB, 5000);
+});
+
+mongoose.connection.on("reconnected", () => {
+  console.log("✅ MongoDB reconnected!");
+});
 
 module.exports = connectDB;

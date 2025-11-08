@@ -11,3 +11,4 @@ node_modules/
 *.log
 server/credentials.json
 .env
+server/credentials.json

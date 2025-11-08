@@ -12,3 +12,4 @@ node_modules/
 server/credentials.json
 .env
 server/credentials.json
+server/config/credentials.json

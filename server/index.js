@@ -27,12 +27,16 @@ app.use(xss());
 app.use(morgan("dev"));
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:4000",
+    origin: process.env.FRONTEND_URL || "http://localhost:3001",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
 app.use(helmet());
+app.use((req, res, next) => {
+  req.io = io; // attach socket instance to all routes
+  next();
+});
 
 // --- Rate Limiting ---
 const limiter = rateLimit({
@@ -41,6 +45,8 @@ const limiter = rateLimit({
   message: "Too many requests, slow down 🕒",
 });
 app.use(limiter);
+
+
 
 // --- Routes ---
 app.use(express.json());

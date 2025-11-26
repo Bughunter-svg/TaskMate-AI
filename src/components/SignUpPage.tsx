@@ -4,6 +4,7 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Sparkles, Lock, User, Mail, UserPlus } from 'lucide-react';
+import logoImage from 'figma:asset/d2fd37b4fb8ffdb0a4ee59a7c194f6eedb951d00.png';
 
 interface SignUpPageProps {
   onSignUp: (userData: { name: string; email: string; username: string }) => void;
@@ -138,9 +139,13 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
                 stiffness: 200,
                 damping: 15,
               }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-600 to-purple-600 mb-4"
+              className="mb-4"
             >
-              <UserPlus className="size-8 text-white" />
+              <img 
+                src={logoImage} 
+                alt="TaskMate AI" 
+                className="w-24 h-24 mx-auto object-contain"
+              />
             </motion.div>
             <h1 className="text-white mb-2">Create Your Account</h1>
             <p className="text-white/50">

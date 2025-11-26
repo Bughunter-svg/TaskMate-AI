@@ -27,7 +27,7 @@ app.use(xss());
 app.use(morgan("dev"));
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3001",
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
@@ -59,14 +59,14 @@ app.use("/api/ai", require("./routes/ai")); // ✅ Gemini route
 
 // --- Health Check ---
 app.get("/", (req, res) => {
-  res.status(200).send("🚀 TaskMate AI Backend is live & secure!");
+  res.status(200).send("TaskMate AI Backend is live & secure!");
 });
 
 // --- Real-time tracking (Socket.io) ---
 let onlineUsers = {};
 
 io.on("connection", (socket) => {
-  console.log("🟢 User connected:", socket.id);
+  console.log("User connected:", socket.id);
 
   socket.on("userOnline", (data) => {
     onlineUsers[socket.id] = { ...data, socketId: socket.id };
@@ -87,7 +87,7 @@ io.on("connection", (socket) => {
 
 // --- Error Handling ---
 app.use((err, req, res, next) => {
-  console.error("🔥 Internal Server Error:", err.stack || err.message);
+  console.error("Internal Server Error:", err.stack || err.message);
   res.status(500).json({
     success: false,
     error: "💥 Internal Server Error — Something went wrong!",

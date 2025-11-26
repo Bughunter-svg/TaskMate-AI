@@ -10,27 +10,31 @@ const connectDB = async () => {
 
   try {
     await mongoose.connect(uri, {
-      ssl: false,
+      family: 4, // Forces IPv4 (Fixes common Node.js connectivity issues)
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000, 
     });
 
     console.log("✅ MongoDB Connected Successfully 🚀");
+
   } catch (err) {
     console.error("❌ MongoDB Connection Failed:", err.message);
-    setTimeout(connectDB, 5000); // retry after 5s
+    // Only retry on initial connection failure, not on disconnects (Mongoose handles those)
+    setTimeout(connectDB, 5000); 
   }
 };
 
-// Handle connection drops gracefully
+// Handle connection events for logging (Let Mongoose handle the actual reconnection)
 mongoose.connection.on("disconnected", () => {
-  console.log("⚠️ MongoDB disconnected, retrying in 5s...");
-  setTimeout(connectDB, 5000);
+  console.log("⚠️ MongoDB disconnected. Mongoose is attempting to reconnect...");
 });
 
 mongoose.connection.on("reconnected", () => {
   console.log("✅ MongoDB reconnected!");
+});
+
+mongoose.connection.on("error", (err) => {
+    console.error("❌ MongoDB Error:", err);
 });
 
 module.exports = connectDB;

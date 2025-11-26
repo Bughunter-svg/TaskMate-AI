@@ -240,6 +240,42 @@ export default function App() {
     setTasks(prevTasks => [...prevTasks, newTask]);
   };
 
+  // Handle AI creating multiple tasks
+  const handleAICreateTasks = (tasksData: Array<{
+    title: string;
+    description: string;
+    category: 'Business' | 'Personal';
+    assignee: string;
+    scheduledDate?: string;
+    scheduledTime?: string;
+    deadline?: string;
+    imageUrl?: string;
+    status?: 'Pending' | 'In Progress' | 'Completed';
+  }>) => {
+    const newTasks: Task[] = tasksData.map((taskData, index) => ({
+      id: `task-${Date.now()}-${index}`,
+      title: taskData.title,
+      description: taskData.description,
+      status: (taskData.status || 'Pending') as Task['status'],
+      assignee: taskData.assignee,
+      category: taskData.category,
+      scheduledDate: taskData.scheduledDate || 'Nov 10',
+      scheduledTime: taskData.scheduledTime || '10:00 AM',
+      deadline: taskData.deadline || 'Nov 15',
+      imageUrl: taskData.imageUrl,
+      isShared: false,
+      ...(taskData.status === 'Completed' && { completedBy: taskData.assignee }),
+      ...(taskData.status === 'In Progress' && { startedAt: 'Just now', progress: 15 }),
+    }));
+
+    setTasks(prevTasks => [...prevTasks, ...newTasks]);
+    
+    // Show success toast
+    toast.success(`AI created ${newTasks.length} task${newTasks.length > 1 ? 's' : ''}!`, {
+      description: `Check your ${mode} dashboard to see them.`,
+    });
+  };
+
   // Handle deleting a task
   const handleDeleteTask = (taskId: string) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
@@ -775,7 +811,12 @@ export default function App() {
         </div>
 
         {/* Enhanced AI Chat Button - Available in both modes */}
-        <EnhancedAIChatButton currentMode={mode} tasks={tasks} />
+        <EnhancedAIChatButton 
+          currentMode={mode} 
+          tasks={tasks} 
+          onCreateTasks={handleAICreateTasks}
+          onSwitchMode={setMode}
+        />
 
         {/* Task Completion Overlay */}
         <TaskCompletionOverlay

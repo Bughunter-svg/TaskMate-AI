@@ -14,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from './ui/popover';
+import logoImage from 'figma:asset/d2fd37b4fb8ffdb0a4ee59a7c194f6eedb951d00.png';
 
 interface TopBarProps {
   onAddTaskClick?: () => void;
@@ -34,9 +35,11 @@ export function TopBar({ onAddTaskClick, currentUser, onLogout }: TopBarProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-3 cursor-pointer">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                  <span className="text-white">T</span>
-                </div>
+                <img 
+                  src={logoImage} 
+                  alt="TaskMate AI" 
+                  className="w-10 h-10 object-contain"
+                />
                 <span className="text-white/90 tracking-tight">TaskMate AI</span>
               </div>
             </TooltipTrigger>

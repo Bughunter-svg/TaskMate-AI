@@ -1,114 +1,184 @@
-import React from 'react';
-import { Plus, Bell, Settings, LogOut, User, Zap, MessageSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search, Plus, User, LogOut, Mail, UserCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RemindersPopover } from './RemindersPopover'; // Assuming this is defined elsewhere
-
-interface CurrentUser {
-  name: string;
-  email: string;
-  username: string;
-}
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
+import logoImage from '../assets/images/d2fd37b4fb8ffdb0a4ee59a7c194f6eedb951d00.png';
 
 interface TopBarProps {
-  onAddTaskClick: () => void;
-  currentUser: CurrentUser | null;
-  onLogout: () => void;
+  onAddTaskClick?: () => void;
+  currentUser?: { name: string; email: string; username: string } | null;
+  onLogout?: () => void;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ onAddTaskClick, currentUser, onLogout }) => {
+export function TopBar({ onAddTaskClick, currentUser, onLogout }: TopBarProps) {
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[#0F1115]/80 border-b border-[#2D333B]/50">
-      <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Left Section: Logo & Search */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Zap className="w-6 h-6 text-indigo-400" />
-            <span className="font-bold text-xl text-white tracking-wider">TaskMate AI</span>
-          </div>
+    <TooltipProvider>
+      <motion.div 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="sticky top-0 z-50 backdrop-blur-xl bg-[#0F1115]/80 border-b border-[#232834]"
+      >
+        <div className="max-w-[1600px] mx-auto px-8 py-4 flex items-center justify-between gap-8">
+          {/* Left: Logo */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-3 cursor-pointer">
+                <img 
+                  src={logoImage} 
+                  alt="TaskMate AI" 
+                  className="w-10 h-10 object-contain"
+                />
+                <span className="text-white/90 tracking-tight">TaskMate AI</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Your AI-powered productivity companion</p>
+            </TooltipContent>
+          </Tooltip>
 
-          <div className="hidden lg:block">
-            <Input
-              type="search"
-              placeholder="Search tasks, teams, or insights..."
-              className="h-9 w-[300px] bg-[#1A1F25] border-transparent text-gray-300 placeholder:text-gray-500 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-indigo-500/50"
-            />
-          </div>
-        </div>
-
-        {/* Right Section: Actions & User */}
-        <div className="flex items-center space-x-3 sm:space-x-4">
-          {/* Add Task Button */}
-          <Button
-            onClick={onAddTaskClick}
-            className="group bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 transition-all duration-300 transform hover:scale-[1.02]"
-            size="sm"
-          >
-            <Plus className="mr-2 h-4 w-4 transition-transform duration-300 group-hover:rotate-90" />
-            Add Task
-          </Button>
-
-          {/* AI Chat Button */}
-          <Button variant="ghost" size="icon" className="text-gray-400 hover:bg-[#1A1F25] hover:text-indigo-400">
-            <MessageSquare className="h-5 w-5" />
-          </Button>
-
-          {/* Reminders/Notifications (assuming RemindersPopover handles the trigger) */}
-          <RemindersPopover />
-
-          {/* User Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="w-9 h-9 ring-2 ring-green-500/50">
-                  <AvatarImage src="https://images.unsplash.com/photo-1672685667592-0392f458f46f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGZhY2V8ZW58MXx8fHwxNzYyNTc3NzMyfDA&ixlib=rb-4.1.0&q=80&w=1080" />
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
-                    {/* FIX APPLIED HERE: Wrapped the ternary expression in curly braces and checked currentUser */}
-                    {currentUser ? currentUser.name.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0F1115]" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-[#1A1F25] border-[#2D333B]" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none text-white">{currentUser?.name || 'Guest User'}</p>
-                  <p className="text-xs leading-none text-gray-400">
-                    {currentUser?.email || 'Please log in'}
-                  </p>
+          {/* Center: Search */}
+          <div className="flex-1 max-w-xl relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none z-10" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Input 
+                    placeholder="Search tasks, projects, or people..."
+                    className="w-full bg-[#1C1F26] border-[#232834] pl-10 text-white/90 placeholder:text-white/40 focus-visible:ring-purple-500/50 focus-visible:border-purple-500/50"
+                  />
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-[#2D333B]" />
-              <DropdownMenuGroup>
-                <DropdownMenuItem className="focus:bg-[#2D333B] text-gray-300 focus:text-white">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="focus:bg-[#2D333B] text-gray-300 focus:text-white">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator className="bg-[#2D333B]" />
-              <DropdownMenuItem onClick={onLogout} className="focus:bg-red-600/50 text-red-400 focus:text-white">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Quickly find any task or team member</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          {/* Right: Add Task + Avatar */}
+          <div className="flex items-center gap-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <Button 
+                      onClick={onAddTaskClick}
+                      className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-5 transition-all duration-200"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Task
+                    </Button>
+                  </motion.div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Create a new task (Ctrl+N)</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <motion.div 
+                        whileHover={{ scale: 1.05 }}
+                        className="relative cursor-pointer"
+                      >
+                        <Avatar className="w-9 h-9 ring-2 ring-green-500/50">
+                          <AvatarImage src="https://images.unsplash.com/photo-1672685667592-0392f458f46f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGZhY2V8ZW58MXx8fHwxNzYyNTc3NzMyfDA&ixlib=rb-4.1.0&q=80&w=1080" />
+                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
+                            {currentUser ? currentUser.name.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0F1115]" />
+                      </motion.div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Your profile • Online</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </PopoverTrigger>
+              
+              <PopoverContent 
+                className="w-80 bg-[#1C1F26] border-[#232834] p-0 overflow-hidden" 
+                align="end"
+                sideOffset={8}
+              >
+                {currentUser && (
+                  <div className="space-y-0">
+                    {/* Header with gradient background */}
+                    <div className="relative p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-b border-[#232834]">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="w-16 h-16 ring-2 ring-purple-500/50">
+                          <AvatarImage src="https://images.unsplash.com/photo-1672685667592-0392f458f46f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGZhY2V8ZW58MXx8fHwxNzYyNTc3NzMyfDA&ixlib=rb-4.1.0&q=80&w=1080" />
+                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
+                            {currentUser.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white truncate">{currentUser.name}</h3>
+                          <p className="text-white/50 text-sm truncate">@{currentUser.username}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Account Details */}
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#0F1115]/50 border border-[#232834]">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-purple-500/10">
+                          <UserCircle className="w-4 h-4 text-purple-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white/40 text-xs">Username</p>
+                          <p className="text-white/90 text-sm truncate">{currentUser.username}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#0F1115]/50 border border-[#232834]">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-500/10">
+                          <Mail className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white/40 text-xs">Email</p>
+                          <p className="text-white/90 text-sm truncate">{currentUser.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Logout Button */}
+                    <div className="p-4 pt-2 border-t border-[#232834]">
+                      <Button
+                        onClick={onLogout}
+                        variant="ghost"
+                        className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Log Out
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
-      </div>
-    </header>
+      </motion.div>
+    </TooltipProvider>
   );
-};
+}

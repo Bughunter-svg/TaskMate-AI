@@ -4,13 +4,12 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Sparkles, Lock, User, Mail, UserPlus } from 'lucide-react';
+import logoImage from '../assets/images/d2fd37b4fb8ffdb0a4ee59a7c194f6eedb951d00.png';
 
 interface SignUpPageProps {
   onSignUp: (userData: { name: string; email: string; username: string }) => void;
   onSwitchToLogin: () => void;
 }
-
-const API_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 
 export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
   const [name, setName] = useState('');
@@ -22,7 +21,7 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -49,27 +48,35 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
 
     setIsLoading(true);
 
-    try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, username, password }),
-      });
+    // Check if username or email already exists
+    const users = JSON.parse(localStorage.getItem('taskmate_users') || '[]');
+    const userExists = users.find(
+      (u: any) => u.username === username || u.email === email
+    );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Signup failed");
-      }
-
-      // Success — trigger parent callback
-      onSignUp({ name, email, username });
-
-    } catch (err: any) {
-      setError(err.message || "Something went wrong during signup");
-    } finally {
+    if (userExists) {
       setIsLoading(false);
+      setError('Username or email already exists');
+      return;
     }
+
+    // Save user to localStorage
+    const newUser = {
+      id: `user-${Date.now()}`,
+      name,
+      email,
+      username,
+      password, // In production, this should be hashed!
+      createdAt: new Date().toISOString(),
+    };
+
+    users.push(newUser);
+    localStorage.setItem('taskmate_users', JSON.stringify(users));
+
+    // Simulate loading animation
+    setTimeout(() => {
+      onSignUp({ name, email, username });
+    }, 600);
   };
 
   return (
@@ -114,6 +121,7 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="relative w-full max-w-md"
       >
+        {/* Frosted glass card */}
         <div className="relative rounded-3xl bg-[#1C1F26]/80 backdrop-blur-xl border border-[#232834] p-8 shadow-2xl">
           {/* Logo and Title */}
           <motion.div
@@ -131,12 +139,18 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
                 stiffness: 200,
                 damping: 15,
               }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-600 to-purple-600 mb-4"
+              className="mb-4"
             >
-              <UserPlus className="size-8 text-white" />
+              <img 
+                src={logoImage} 
+                alt="TaskMate AI" 
+                className="w-24 h-24 mx-auto object-contain"
+              />
             </motion.div>
             <h1 className="text-white mb-2">Create Your Account</h1>
-            <p className="text-white/50">Join TaskMate AI and boost your productivity</p>
+            <p className="text-white/50">
+              Join TaskMate AI and boost your productivity
+            </p>
           </motion.div>
 
           {/* Sign Up Form */}
@@ -158,7 +172,7 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
               </motion.div>
             )}
 
-            {/* Full Name */}
+            {/* Name Field */}
             <div className="space-y-2">
               <label htmlFor="name" className="text-white/80 text-sm block">
                 Full Name
@@ -167,15 +181,17 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/40" />
                 <Input
                   id="name"
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your full name"
-                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30"
+                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30 focus-visible:border-orange-500/50 focus-visible:ring-orange-500/20"
+                  required
                 />
               </div>
             </div>
 
-            {/* Email */}
+            {/* Email Field */}
             <div className="space-y-2">
               <label htmlFor="email" className="text-white/80 text-sm block">
                 Email Address
@@ -188,12 +204,13 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30"
+                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30 focus-visible:border-orange-500/50 focus-visible:ring-orange-500/20"
+                  required
                 />
               </div>
             </div>
 
-            {/* Username */}
+            {/* Username Field */}
             <div className="space-y-2">
               <label htmlFor="username" className="text-white/80 text-sm block">
                 Username
@@ -202,15 +219,17 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
                 <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/40" />
                 <Input
                   id="username"
+                  type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Choose a username"
-                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30"
+                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30 focus-visible:border-orange-500/50 focus-visible:ring-orange-500/20"
+                  required
                 />
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password Field */}
             <div className="space-y-2">
               <label htmlFor="password" className="text-white/80 text-sm block">
                 Password
@@ -222,13 +241,14 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Create a password (min. 6 chars)"
-                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30"
+                  placeholder="Create a password (min. 6 characters)"
+                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30 focus-visible:border-orange-500/50 focus-visible:ring-orange-500/20"
+                  required
                 />
               </div>
             </div>
 
-            {/* Confirm Password */}
+            {/* Confirm Password Field */}
             <div className="space-y-2">
               <label htmlFor="confirm-password" className="text-white/80 text-sm block">
                 Confirm Password
@@ -240,38 +260,46 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm password"
-                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30"
+                  placeholder="Confirm your password"
+                  className="pl-10 h-11 bg-[#0F1115]/50 border-[#232834] text-white placeholder:text-white/30 focus-visible:border-orange-500/50 focus-visible:ring-orange-500/20"
+                  required
                 />
               </div>
             </div>
 
-            {/* Terms */}
+            {/* Terms and Conditions Checkbox */}
             <div className="flex items-start gap-2 pt-2">
-              <Checkbox
+              <Checkbox 
                 id="terms"
                 checked={agreeToTerms}
                 onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
-                className="mt-0.5 border-[#232834]"
+                className="mt-0.5 border-[#232834] data-[state=checked]:bg-gradient-to-br data-[state=checked]:from-orange-600 data-[state=checked]:to-purple-600 data-[state=checked]:border-orange-500"
               />
-              <label htmlFor="terms" className="text-white/60 text-sm">
-                I agree to the{" "}
+              <label 
+                htmlFor="terms" 
+                className="text-white/60 text-sm cursor-pointer hover:text-white/80 transition-colors duration-200"
+              >
+                I agree to the{' '}
                 <span className="text-orange-400 hover:text-orange-300">
                   Terms and Conditions
-                </span>{" "}
-                and{" "}
+                </span>{' '}
+                and{' '}
                 <span className="text-orange-400 hover:text-orange-300">
                   Privacy Policy
                 </span>
               </label>
             </div>
 
-            {/* Button */}
-            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="pt-2">
+            {/* Sign Up Button */}
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className="pt-2"
+            >
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 bg-gradient-to-r from-orange-600 to-purple-600 hover:from-orange-500 hover:to-purple-500 text-white shadow-lg shadow-orange-500/20"
+                className="w-full h-11 bg-gradient-to-r from-orange-600 to-purple-600 hover:from-orange-500 hover:to-purple-500 text-white shadow-lg shadow-orange-500/20 transition-all duration-200"
               >
                 {isLoading ? (
                   <motion.div
@@ -286,7 +314,7 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
             </motion.div>
           </motion.form>
 
-          {/* Footer */}
+          {/* Footer Links */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -304,7 +332,34 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
             </div>
           </motion.div>
         </div>
+
+        {/* Bottom glow effect */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-orange-600/10 to-purple-600/10 rounded-3xl blur-2xl" />
       </motion.div>
+
+      {/* Floating particles effect */}
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: [0, 0.4, 0],
+            y: [0, -100],
+            x: Math.random() * 100 - 50,
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: i * 0.8,
+            ease: 'easeOut',
+          }}
+          className="absolute w-1 h-1 bg-orange-400 rounded-full"
+          style={{
+            left: `${20 + i * 13}%`,
+            bottom: '10%',
+          }}
+        />
+      ))}
     </div>
   );
 }

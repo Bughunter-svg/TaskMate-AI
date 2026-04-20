@@ -24,6 +24,12 @@ const io = new Server(server, {
 });
 
 /* =======================
+   Database Connection
+======================= */
+const connectDB = require("./config/db");
+connectDB();
+
+/* =======================
    Security Middleware
 ======================= */
 const applySecurity = require("./middleware/security");

@@ -7,7 +7,11 @@ interface StatsOverviewProps {
   pendingCount: number;
 }
 
-export function StatsOverview({ completedCount, inProgressCount, pendingCount }: StatsOverviewProps) {
+export function StatsOverview({
+  completedCount,
+  inProgressCount,
+  pendingCount,
+}: StatsOverviewProps) {
   const stats = [
     {
       label: 'Completed',
@@ -46,16 +50,13 @@ export function StatsOverview({ completedCount, inProgressCount, pendingCount }:
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1, duration: 0.25, ease: 'easeOut' }}
-          whileHover={{ 
-            y: -4, 
-            transition: { duration: 0.2 } 
-          }}
+          whileHover={{ y: -4, transition: { duration: 0.2 } }}
           className={`relative rounded-2xl bg-gradient-to-br ${stat.gradient} bg-[#1C1F26] border ${stat.border} p-6 hover:shadow-lg hover:${stat.glow} transition-all duration-200`}
         >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-white/60 mb-2">{stat.label}</p>
-              <motion.p 
+              <motion.p
                 key={stat.count}
                 initial={{ scale: 1.2, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}

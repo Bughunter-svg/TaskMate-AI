@@ -15,9 +15,10 @@ interface ScheduleTask {
 }
 
 interface SchedulePageProps {
-  tasks: ScheduleTask[];
+  tasks?: ScheduleTask[];
   onTaskComplete?: (taskId: string) => void;
 }
+
 
 const defaultScheduleTasks: ScheduleTask[] = [
   // TODAY - You

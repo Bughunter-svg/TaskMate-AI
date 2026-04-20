@@ -1,13 +1,21 @@
+import { useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import { motion } from 'motion/react';
 
+type TaskStatus = 'Completed' | 'In Progress' | 'Pending';
+
 interface DraggableTaskCardProps {
   taskId: string;
-  status: 'Completed' | 'In Progress' | 'Pending';
+  status: TaskStatus;
   children: React.ReactNode;
 }
 
-export function DraggableTaskCard({ taskId, status, children }: DraggableTaskCardProps) {
+export function DraggableTaskCard({
+  taskId,
+  status,
+  children,
+}: DraggableTaskCardProps) {
+  const ref = useRef<HTMLDivElement>(null);
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'TASK',
     item: { taskId, currentStatus: status },
@@ -16,9 +24,11 @@ export function DraggableTaskCard({ taskId, status, children }: DraggableTaskCar
     }),
   }));
 
+  drag(ref);
+
   return (
     <motion.div
-      ref={drag}
+      ref={ref}
       style={{
         opacity: isDragging ? 0.5 : 1,
         cursor: 'grab',

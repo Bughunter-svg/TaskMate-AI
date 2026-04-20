@@ -434,20 +434,20 @@ export function EnhancedAIChatButton({ currentMode: appMode = 'solo', tasks = []
               
               if (isTeamTask && !isSoloTask && appMode === 'solo') {
                 // User wants team tasks but is in solo mode
-                response = `🎯 I found ${parsedTasks.length} task${parsedTasks.length > 1 ? 's' : ''} for your team:\n\n   ${taskList}\n\n⚠️ You're currently in Solo Mode, but these look like team tasks. Should I:\n\n1️⃣ Switch to Team Mode and create these tasks there?\n2️⃣ Create them in Solo Mode and assign all to you?`;
+                response = `🎯 I found ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''} for your team:\n\n   ${taskList}\n\n⚠️ You're currently in Solo Mode, but these look like team tasks. Should I:\n\n1️⃣ Switch to Team Mode and create these tasks there?\n2️⃣ Create them in Solo Mode and assign all to you?`;
               } else if (isSoloTask && !isTeamTask && appMode === 'team') {
                 // User wants solo tasks but is in team mode
-                response = `🎯 I found ${parsedTasks.length} personal task${parsedTasks.length > 1 ? 's' : ''} for you:\n\n   ${taskList}\n\n💡 You're in Team Mode, but these are your personal tasks. Should I:\n\n1️⃣ Switch to Solo Mode and create these tasks there?\n2️⃣ Create them in Team Mode anyway?`;
-              } else if (parsedTasks.length > 5) {
+                response = `🎯 I found ${allParsedTasks.length} personal task${allParsedTasks.length > 1 ? 's' : ''} for you:\n\n   ${taskList}\n\n💡 You're in Team Mode, but these are your personal tasks. Should I:\n\n1️⃣ Switch to Solo Mode and create these tasks there?\n2️⃣ Create them in Team Mode anyway?`;
+              } else if (allParsedTasks.length > 5) {
                 // Too many tasks
-                response = `🎯 Wow! I found ${parsedTasks.length} tasks:\n\n   ${taskList}\n\nThat's quite a list! Would you like me to create all of these on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard?`;
+                response = `🎯 Wow! I found ${allParsedTasks.length} tasks:\n\n   ${taskList}\n\nThat's quite a list! Would you like me to create all of these on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard?`;
               } else {
                 // General confirmation
-                response = `🎯 Great! I found ${parsedTasks.length} task${parsedTasks.length > 1 ? 's' : ''}:\n\n   ${taskList}\n\nWould you like me to create these on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard?`;
+                response = `🎯 Great! I found ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''}:\n\n   ${taskList}\n\nWould you like me to create these on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard?`;
               }
               
               // Store pending tasks with suggested mode
-              setPendingTasksToCreate(parsedTasks.map(t => ({
+              setPendingTasksToCreate(allParsedTasks.map(t => ({
                 ...t,
                 scheduledDate: 'Nov 10',
                 scheduledTime: '10:00 AM',
@@ -459,14 +459,14 @@ export function EnhancedAIChatButton({ currentMode: appMode = 'solo', tasks = []
                 text: response, 
                 isUser: false,
                 isConfirmation: true,
-                pendingTasks: parsedTasks
+                pendingTasks: allParsedTasks
               }]);
               setMessage('');
               setAttachedFiles([]);
               return;
             } else {
               // Auto-create tasks (no mode mismatch, small number)
-              const tasksToCreate = parsedTasks.map(t => ({
+              const tasksToCreate = allParsedTasks.map(t => ({
                 ...t,
                 scheduledDate: 'Nov 10',
                 scheduledTime: '10:00 AM',
@@ -476,9 +476,9 @@ export function EnhancedAIChatButton({ currentMode: appMode = 'solo', tasks = []
               
               if (onCreateTasks) {
                 onCreateTasks(tasksToCreate);
-                response = `✅ Perfect! I've created ${parsedTasks.length} task${parsedTasks.length > 1 ? 's' : ''} on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard:\n\n   ${taskList}\n\n💡 Check your dashboard to see them! They're in the Pending column and ready to go.`;
+                response = `✅ Perfect! I've created ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''} on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard:\n\n   ${taskList}\n\n💡 Check your dashboard to see them! They're in the Pending column and ready to go.`;
               } else {
-                response = `✅ I've identified ${parsedTasks.length} task${parsedTasks.length > 1 ? 's' : ''}:\n\n   ${taskList}\n\n💡 Ready to create them!`;
+                response = `✅ I've identified ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''}:\n\n   ${taskList}\n\n💡 Ready to create them!`;
               }
             }
           } else if (message.toLowerCase().includes('team') || message.toLowerCase().includes('workload')) {

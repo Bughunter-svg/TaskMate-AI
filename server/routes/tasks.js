@@ -53,7 +53,8 @@ router.post("/", async (req, res) => {
       id: crypto.randomUUID(),
       title,
       description: description || "",
-      category: category || "general",
+      category: category || "Personal",
+      assignee: "you",
       status: "Pending",
       scheduledAt: scheduledAt || null,
       createdAt: new Date().toISOString(),
@@ -89,6 +90,41 @@ router.post("/", async (req, res) => {
    GET /api/tasks/:userId
    Get all tasks (auto-hydrating)
 ---------------------------------- */
+/* ---------------------------------
+   GET /api/tasks?userId=xxx
+---------------------------------- */
+router.get("/", async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "userId is required",
+      });
+    }
+
+    let user = getUser(userId);
+    if (!user) {
+      user = await loadUserData(userId);
+    }
+
+    user = normalizeUser(user, userId);
+    setUser(userId, user);
+
+    return res.json({
+      success: true,
+      tasks: user.tasks,
+    });
+  } catch (err) {
+    console.error("GET TASKS ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Failed to load tasks",
+    });
+  }
+});
+
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;

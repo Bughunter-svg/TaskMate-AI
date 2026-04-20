@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Toaster, toast } from 'sonner@2.0.3';
-import { Plus } from 'lucide-react';
+import { Toaster, toast } from 'sonner';
+
 import { LoginPage } from './components/LoginPage';
 import { SignUpPage } from './components/SignUpPage';
 import { TopBar } from './components/TopBar';
@@ -49,365 +49,160 @@ interface Task {
   deadline?: string;
 }
 
-const initialTasks: Task[] = [
-  {
-    id: 'task-1',
-    title: 'Redesign Landing Page',
-    description: 'Update the hero section, colors, and typography to match new brand guidelines.',
-    status: 'Completed',
-    completedBy: 'You',
-    assignee: 'You',
-    category: 'Business',
-    isShared: false,
-  },
-  {
-    id: 'task-2',
-    title: 'Database Schema Update',
-    description: 'Optimize database structure and add necessary indexes.',
-    status: 'Completed',
-    completedBy: 'Alice Chen',
-    assignee: 'Alice Chen',
-    category: 'Business',
-    isShared: false,
-  },
-  {
-    id: 'task-3',
-    title: 'Dribbles Shot 7',
-    description: 'Create a new Dribbble shot showcasing the dashboard interface.',
-    status: 'Completed',
-    completedBy: 'You',
-    assignee: 'You',
-    category: 'Personal',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1602794297301-8aadc0fecf7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZXNpZ24lMjBtYXRlcmlhbCUyMG1vY2t1cHxlbnwxfHx8fDE3NjI1NzUwMzl8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-4',
-    title: 'Create Material for Samaritan Section',
-    description: 'Design and develop marketing materials for the new product launch.',
-    status: 'In Progress',
-    scheduledTime: '10:00 AM',
-    startedAt: '2h ago',
-    progress: 65,
-    assignee: 'You',
-    category: 'Business',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1602794297301-8aadc0fecf7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZXNpZ24lMjBtYXRlcmlhbCUyMG1vY2t1cHxlbnwxfHx8fDE3NjI1NzUwMzl8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-5',
-    title: 'Design UI/UX Dashboard',
-    description: 'Complete the design system and component library for the new dashboard.',
-    status: 'In Progress',
-    scheduledTime: '09:30 AM',
-    startedAt: '3h ago',
-    progress: 45,
-    assignee: 'Rana Kumar',
-    category: 'Business',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1761593280919-766a4acbcfca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXNoYm9hcmQlMjBpbnRlcmZhY2UlMjBkZXNpZ258ZW58MXx8fHwxNzYyNTAxMTY5fDA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-6',
-    title: 'API Integration Testing',
-    description: 'Test all API endpoints and document response schemas.',
-    status: 'In Progress',
-    scheduledTime: '11:00 AM',
-    startedAt: '1h ago',
-    progress: 30,
-    assignee: 'You',
-    category: 'Business',
-    isShared: true,
-    sharedWith: 'Alice Chen',
-    imageUrl: 'https://images.unsplash.com/photo-1702396303987-ba7478448408?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcGklMjB0ZXN0aW5nJTIwY29kZXxlbnwxfHx8fDE3NjI1NzUwMzl8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-7',
-    title: 'User Feedback Analysis',
-    description: 'Review and categorize user feedback from the last sprint.',
-    status: 'In Progress',
-    scheduledTime: '02:00 PM',
-    startedAt: '30m ago',
-    progress: 20,
-    assignee: 'Suman Patel',
-    category: 'Business',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1602794297301-8aadc0fecf7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkZXNpZ24lMjBtYXRlcmlhbCUyMG1vY2t1cHxlbnwxfHx8fDE3NjI1NzUwMzl8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-8',
-    title: 'Performance Optimization',
-    description: 'Improve page load times and optimize asset delivery.',
-    status: 'In Progress',
-    scheduledTime: '01:00 PM',
-    startedAt: '1.5h ago',
-    progress: 55,
-    assignee: 'You',
-    category: 'Personal',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1761593280919-766a4acbcfca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXNoYm9hcmQlMjBpbnRlcmZhY2UlMjBkZXNpZ258ZW58MXx8fHwxNzYyNTAxMTY5fDA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-9',
-    title: 'Update Photo Profile Instagram',
-    description: 'Refresh company Instagram profile with new branding photos.',
-    status: 'Pending',
-    scheduledDate: 'Nov 10',
-    scheduledTime: '03:00 PM',
-    assignee: 'You',
-    category: 'Personal',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1628563694622-5a76957fd09c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbnN0YWdyYW0lMjBwcm9maWxlfGVufDF8fHx8MTc2MjU3NTA0MHww&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-10',
-    title: 'Mobile App Wireframes',
-    description: 'Create wireframes for the mobile version of the application.',
-    status: 'Pending',
-    scheduledDate: 'Nov 11',
-    scheduledTime: '10:00 AM',
-    assignee: 'Marcus Johnson',
-    category: 'Business',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1541462608143-67571c6738dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2JpbGUlMjB3aXJlZnJhbWUlMjBza2V0Y2h8ZW58MXx8fHwxNzYyNTc1MDQwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-11',
-    title: 'Documentation Update',
-    description: 'Update technical documentation with latest API changes.',
-    status: 'Pending',
-    scheduledDate: 'Nov 12',
-    scheduledTime: '09:00 AM',
-    assignee: 'You',
-    category: 'Business',
-    isShared: true,
-    sharedWith: 'Marcus Johnson',
-    imageUrl: 'https://images.unsplash.com/photo-1556075798-4825dfaaf498?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkb2N1bWVudGF0aW9uJTIwY29kZXxlbnwxfHx8fDE3NjI1NzUwNDB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-  {
-    id: 'task-12',
-    title: 'Photo Profile Instagram',
-    description: 'Take professional photos for team member profiles.',
-    status: 'Pending',
-    scheduledDate: 'Nov 13',
-    scheduledTime: '02:30 PM',
-    assignee: 'Alice Chen',
-    category: 'Personal',
-    isShared: false,
-    imageUrl: 'https://images.unsplash.com/photo-1628563694622-5a76957fd09c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpbnN0YWdyYW0lMjBwcm9maWxlfGVufDF8fHx8MTc2MjU3NTA0MHww&ixlib=rb-4.1.0&q=80&w=1080',
-  },
-];
+const API = 'http://localhost:4000/api/tasks';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; username: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showSignUp, setShowSignUp] = useState(false);
+
   const [mode, setMode] = useState<'solo' | 'team'>('solo');
   const [activeTab, setActiveTab] = useState<'projects' | 'schedule' | 'team'>('projects');
-  const [showCompletionOverlay, setShowCompletionOverlay] = useState(false);
-  const [completedTaskTitle, setCompletedTaskTitle] = useState('');
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
+
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
+
   const [showThanosSnap, setShowThanosSnap] = useState(false);
   const [snapTaskTitle, setSnapTaskTitle] = useState('');
   const [nextTask, setNextTask] = useState<{ title: string; date?: string; time?: string } | null>(null);
 
-  // Handle adding a new task
-  const handleAddTask = (taskData: {
-    title: string;
-    description: string;
-    category: 'Business' | 'Personal';
-    assignee: string;
-    scheduledDate: string;
-    scheduledTime: string;
-    deadline: string;
-  }) => {
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      title: taskData.title,
-      description: taskData.description,
-      status: 'Pending',
-      assignee: taskData.assignee,
-      category: taskData.category,
-      scheduledDate: taskData.scheduledDate,
-      scheduledTime: taskData.scheduledTime,
-      deadline: taskData.deadline,
-      isShared: false,
-    };
+  /* =========================
+     LOAD TASKS (FIXED)
+  ========================= */
+  useEffect(() => {
+    if (!currentUser) return;
 
-    setTasks(prevTasks => [...prevTasks, newTask]);
-  };
-
-  // Handle AI creating multiple tasks
-  const handleAICreateTasks = (tasksData: Array<{
-    title: string;
-    description: string;
-    category: 'Business' | 'Personal';
-    assignee: string;
-    scheduledDate?: string;
-    scheduledTime?: string;
-    deadline?: string;
-    imageUrl?: string;
-    status?: 'Pending' | 'In Progress' | 'Completed';
-  }>) => {
-    const newTasks: Task[] = tasksData.map((taskData, index) => ({
-      id: `task-${Date.now()}-${index}`,
-      title: taskData.title,
-      description: taskData.description,
-      status: (taskData.status || 'Pending') as Task['status'],
-      assignee: taskData.assignee,
-      category: taskData.category,
-      scheduledDate: taskData.scheduledDate || 'Nov 10',
-      scheduledTime: taskData.scheduledTime || '10:00 AM',
-      deadline: taskData.deadline || 'Nov 15',
-      imageUrl: taskData.imageUrl,
-      isShared: false,
-      ...(taskData.status === 'Completed' && { completedBy: taskData.assignee }),
-      ...(taskData.status === 'In Progress' && { startedAt: 'Just now', progress: 15 }),
-    }));
-
-    setTasks(prevTasks => [...prevTasks, ...newTasks]);
-    
-    // Show success toast
-    toast.success(`AI created ${newTasks.length} task${newTasks.length > 1 ? 's' : ''}!`, {
-      description: `Check your ${mode} dashboard to see them.`,
-    });
-  };
-
-  // Handle deleting a task
-  const handleDeleteTask = (taskId: string) => {
-    const taskToDelete = tasks.find(t => t.id === taskId);
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-    
-    if (taskToDelete) {
-      toast.success('Task deleted', {
-        description: `${taskToDelete.title} has been removed.`,
-      });
-    }
-  };
-
-  // Handle task drag and drop
-  const handleTaskDrop = (taskId: string, newStatus: 'Completed' | 'In Progress' | 'Pending') => {
-    const movedTask = tasks.find(t => t.id === taskId);
-    
-    // If task is being moved to Completed, show Thanos snap animation
-    if (newStatus === 'Completed' && movedTask) {
-      setSnapTaskTitle(movedTask.title);
-      
-      // Find the next pending or in-progress task
-      const currentTasks = mode === 'solo' ? soloTasks : tasks;
-      const upcomingTask = currentTasks.find(
-        t => t.id !== taskId && (t.status === 'Pending' || t.status === 'In Progress')
-      );
-      
-      if (upcomingTask) {
-        setNextTask({
-          title: upcomingTask.title,
-          date: upcomingTask.scheduledDate,
-          time: upcomingTask.scheduledTime,
-        });
-      } else {
-        setNextTask(null);
+    (async () => {
+      try {
+        const res = await fetch(`http://localhost:4000/api/tasks/${currentUser.username}`,{credentials: 'include'});
+        const data = await res.json();
+        setTasks(data.tasks || []);
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to load tasks');
       }
-      
-      setShowThanosSnap(true);
-    } else {
-      // For non-completed status, show regular toast
-      if (movedTask) {
-        toast.success(`Task moved to ${newStatus}`, {
-          description: movedTask.title,
-        });
-      }
-    }
-    
-    setTasks(prevTasks => {
-      const updatedTasks = prevTasks.map(task => {
-        if (task.id === taskId) {
-          const updatedTask = { ...task, status: newStatus };
-          if (newStatus === 'Completed') {
-            updatedTask.completedBy = task.assignee;
-          }
-          return updatedTask;
-        }
-        return task;
-      });
-      
-      return updatedTasks;
-    });
-  };
-
-  // Filter tasks for solo mode
-  const soloTasks = tasks.filter(task => task.assignee === 'You');
+    })();
+  }, [currentUser]);
   
-  // Calculate category summaries
+
+  /* =========================
+     MUTATIONS (FIXED)
+  ========================= */
+  const handleAddTask = async (taskData: any) => {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...taskData,
+        userId: currentUser.username,
+      }),
+    });
+
+    const data = await res.json();
+    if(!data.success){
+    	toast.error(data.error || 'Failed to add task');
+    	return;
+    }
+    setTasks(prev => [...prev, data.task]);
+    toast.success('Task added');
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    await fetch(`${API}/${taskId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.username }),
+    });
+
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    toast.success('Task deleted');
+  };
+
+  const handleTaskDrop = async (taskId: string, newStatus: Task['status']) => {
+    setTasks(prev =>
+      prev.map(t =>
+        t.id === taskId
+          ? { ...t, status: newStatus, ...(newStatus === 'Completed' && { completedBy: t.assignee }) }
+          : t
+      )
+    );
+
+    await fetch(`${API}/${taskId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser.username,
+        status: newStatus,
+      }),
+    });
+
+    if (newStatus === 'Completed') {
+      const finished = tasks.find(t => t.id === taskId);
+      const next = tasks.find(t => t.id !== taskId && t.status !== 'Completed');
+
+      setSnapTaskTitle(finished?.title || '');
+      setNextTask(
+        next
+          ? { title: next.title, date: next.scheduledDate, time: next.scheduledTime }
+          : null
+      );
+      setShowThanosSnap(true);
+    }
+  };
+
+  /* =========================
+     DERIVED DATA
+  ========================= */
+  const soloTasks = tasks.filter(t => t.assignee === 'You');
+  const currentTasks = mode === 'solo' ? soloTasks : tasks;
+
+  const completedCount = currentTasks.filter(t => t.status === 'Completed').length;
+  const inProgressCount = currentTasks.filter(t => t.status === 'In Progress').length;
+  const pendingCount = currentTasks.filter(t => t.status === 'Pending').length;
+
   const personalTasks = soloTasks.filter(t => t.category === 'Personal');
   const businessTasks = soloTasks.filter(t => t.category === 'Business');
   const personalCompleted = personalTasks.filter(t => t.status === 'Completed').length;
   const businessCompleted = businessTasks.filter(t => t.status === 'Completed').length;
 
-  // Calculate stats for current mode
-  const currentTasks = mode === 'solo' ? soloTasks : tasks;
-  const completedCount = currentTasks.filter(t => t.status === 'Completed').length;
-  const inProgressCount = currentTasks.filter(t => t.status === 'In Progress').length;
-  const pendingCount = currentTasks.filter(t => t.status === 'Pending').length;
-
-  // Handle task card click
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setIsTaskDetailOpen(true);
   };
 
-  // Handle user login
-  const handleLogin = (userData: { name: string; email: string; username: string }) => {
-    setCurrentUser(userData);
+  /* =========================
+     AUTH
+  ========================= */
+  const handleLogin = (user: any) => {
+    setCurrentUser(user);
     setIsLoggedIn(true);
-    toast.success(`Welcome back, ${userData.name}!`, {
-      description: 'You have successfully signed in.',
-    });
   };
 
-  // Handle user sign up
-  const handleSignUp = (userData: { name: string; email: string; username: string }) => {
-    // Don't auto-login, just redirect to login page
-    setShowSignUp(false);
-    toast.success(`Account created successfully!`, {
-      description: 'Please sign in with your credentials to continue.',
-    });
-  };
-
-  // Show sign-up page
   if (!isLoggedIn && showSignUp) {
-    return (
-      <SignUpPage
-        onSignUp={handleSignUp}
-        onSwitchToLogin={() => setShowSignUp(false)}
-      />
-    );
+    return <SignUpPage onSignUp={() => setShowSignUp(false)} onSwitchToLogin={() => setShowSignUp(false)} />;
   }
 
-  // Show login page if not logged in
   if (!isLoggedIn) {
-    return (
-      <LoginPage
-        onLogin={handleLogin}
-        onSwitchToSignUp={() => setShowSignUp(true)}
-      />
-    );
+    return <LoginPage onLogin={handleLogin} onSwitchToSignUp={() => setShowSignUp(true)} />;
   }
 
+  /* =========================
+     RENDER
+  ========================= */
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gradient-to-br from-[#0F1115] to-[#15181E]">
-        <Toaster position="top-right" theme="dark" richColors />
-        <TopBar 
-          onAddTaskClick={() => setIsAddTaskDialogOpen(true)} 
+        <Toaster theme="dark" richColors />
+
+        <TopBar
           currentUser={currentUser}
+          onAddTaskClick={() => setIsAddTaskDialogOpen(true)}
           onLogout={() => {
             setIsLoggedIn(false);
             setCurrentUser(null);
-            toast.success('Logged out successfully');
           }}
         />
 
@@ -488,7 +283,7 @@ export default function App() {
                 {activeTab === 'schedule' ? (
                   <SchedulePage />
                 ) : activeTab === 'projects' ? (
-                  <>
+                  <div className="space-y-12">
                     {/* Solo Mode Graphs */}
                     <div className="space-y-6">
                       <div>
@@ -657,7 +452,7 @@ export default function App() {
 
                     {/* Daily Report Analysis - Solo Mode - Moved to End */}
                     <DailyReportAnalysis tasks={soloTasks} mode="solo" />
-                  </>
+                  </div>
                 ) : null}
               </motion.div>
             ) : (
@@ -810,37 +605,26 @@ export default function App() {
           </AnimatePresence>
         </div>
 
-        {/* Enhanced AI Chat Button - Available in both modes */}
-        <EnhancedAIChatButton 
-          currentMode={mode} 
-          tasks={tasks} 
-          onCreateTasks={handleAICreateTasks}
+        <EnhancedAIChatButton
+          currentMode={mode}
+          tasks={tasks}
+          onCreateTasks={async newTasks => {
+            for (const t of newTasks) {
+              await handleAddTask(t);
+            }
+          }}
           onSwitchMode={setMode}
         />
 
-        {/* Task Completion Overlay */}
-        <TaskCompletionOverlay
-          isVisible={showCompletionOverlay}
-          taskTitle={completedTaskTitle}
-          progressPercentage={72}
-          onComplete={() => setShowCompletionOverlay(false)}
-        />
-
-        {/* Thanos Snap Overlay */}
         <ThanosSnapOverlay
           isVisible={showThanosSnap}
           taskTitle={snapTaskTitle}
           nextTaskTitle={nextTask?.title}
           nextTaskDate={nextTask?.date}
           nextTaskTime={nextTask?.time}
-          onComplete={() => {
-            setShowThanosSnap(false);
-            setSnapTaskTitle('');
-            setNextTask(null);
-          }}
+          onComplete={() => setShowThanosSnap(false)}
         />
 
-        {/* Add Task Dialog */}
         <AddTaskDialog
           isOpen={isAddTaskDialogOpen}
           onClose={() => setIsAddTaskDialogOpen(false)}
@@ -848,14 +632,10 @@ export default function App() {
           mode={mode}
         />
 
-        {/* Task Detail Dialog */}
         <TaskDetailDialog
           task={selectedTask}
           isOpen={isTaskDetailOpen}
-          onClose={() => {
-            setIsTaskDetailOpen(false);
-            setSelectedTask(null);
-          }}
+          onClose={() => setIsTaskDetailOpen(false)}
         />
       </div>
     </DndProvider>

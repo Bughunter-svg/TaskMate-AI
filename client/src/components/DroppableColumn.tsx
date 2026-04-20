@@ -1,17 +1,31 @@
+import { useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import { motion } from 'motion/react';
 
+type TaskStatus = 'Completed' | 'In Progress' | 'Pending';
+
+interface DragItem {
+  taskId: string;
+  currentStatus: TaskStatus;
+}
+
 interface DroppableColumnProps {
-  status: 'Completed' | 'In Progress' | 'Pending';
-  onDrop: (taskId: string, newStatus: 'Completed' | 'In Progress' | 'Pending') => void;
+  status: TaskStatus;
+  onDrop: (taskId: string, newStatus: TaskStatus) => void;
   children: React.ReactNode;
   color: 'green' | 'purple' | 'orange';
 }
 
-export function DroppableColumn({ status, onDrop, children, color }: DroppableColumnProps) {
+export function DroppableColumn({
+  status,
+  onDrop,
+  children,
+  color,
+}: DroppableColumnProps) {
+  const ref = useRef<HTMLDivElement>(null);
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: 'TASK',
-    drop: (item: { taskId: string; currentStatus: string }) => {
+    drop: (item: DragItem) => {
       if (item.currentStatus !== status) {
         onDrop(item.taskId, status);
       }
@@ -22,6 +36,8 @@ export function DroppableColumn({ status, onDrop, children, color }: DroppableCo
     }),
   }));
 
+  drop(ref);
+
   const colorClasses = {
     green: 'bg-green-500/20 border-green-500/50',
     purple: 'bg-purple-500/20 border-purple-500/50',
@@ -30,15 +46,14 @@ export function DroppableColumn({ status, onDrop, children, color }: DroppableCo
 
   return (
     <motion.div
-      ref={drop}
+      ref={ref}
       className={`relative transition-all duration-200 ${
         isOver && canDrop ? `${colorClasses[color]} border-2 border-dashed` : ''
       }`}
-      style={{
-        minHeight: '400px',
-      }}
+      style={{ minHeight: '400px' }}
     >
       {children}
+
       {isOver && canDrop && (
         <motion.div
           initial={{ opacity: 0 }}

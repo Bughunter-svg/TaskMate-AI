@@ -19,9 +19,9 @@ interface InProgressTaskCardProps {
   onClick?: () => void;
 }
 
-export function InProgressTaskCard({ 
-  title, 
-  description, 
+export function InProgressTaskCard({
+  title,
+  description,
   scheduledTime,
   startedAt,
   assignee,
@@ -30,19 +30,20 @@ export function InProgressTaskCard({
   imageUrl,
   isShared,
   onDelete,
-  onClick
+  onClick,
 }: InProgressTaskCardProps) {
-  const [progress, setProgress] = useState(initialProgress);
+  const [progress, setProgress] = useState(
+    Math.min(Math.max(initialProgress ?? 0, 0), 100)
+  );
   const [isHovered, setIsHovered] = useState(false);
 
-  // Simulate progress increasing over time
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) return 100;
-        return prev + Math.random() * 2; // Random increment between 0-2%
+        return Math.min(prev + Math.random() * 2, 100);
       });
-    }, 3000); // Update every 3 seconds
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -52,17 +53,12 @@ export function InProgressTaskCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.2, ease: 'easeOut' }}
-      whileHover={{ 
-        scale: 1.01,
-        y: -2,
-        transition: { duration: 0.15 }
-      }}
+      whileHover={{ scale: 1.01, y: -2, transition: { duration: 0.15 } }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
       className="relative rounded-xl bg-[#1C1F26] border border-[#232834] overflow-hidden hover:shadow-md hover:shadow-purple-500/10 transition-all duration-200 cursor-pointer group"
     >
-      {/* Delete Button */}
       {onDelete && (
         <motion.button
           initial={{ opacity: 0, scale: 0.8 }}
@@ -78,7 +74,6 @@ export function InProgressTaskCard({
         </motion.button>
       )}
 
-      {/* Sharing Badge */}
       {isShared && (
         <div className="absolute top-3 right-3 z-10">
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/20 border border-blue-500/30">
@@ -88,11 +83,10 @@ export function InProgressTaskCard({
         </div>
       )}
 
-      {/* Task Image */}
       {imageUrl && (
         <div className="w-full h-32 overflow-hidden bg-white/5">
-          <ImageWithFallback 
-            src={imageUrl} 
+          <ImageWithFallback
+            src={imageUrl}
             alt={title}
             className="w-full h-full object-cover"
           />
@@ -100,7 +94,6 @@ export function InProgressTaskCard({
       )}
 
       <div className="p-4 space-y-3">
-        {/* Title */}
         <div className="flex items-start gap-2">
           <Zap className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
           <h4 className="text-white/90 line-clamp-2 leading-snug flex-1">
@@ -108,15 +101,13 @@ export function InProgressTaskCard({
           </h4>
         </div>
 
-        {/* Description */}
         <p className="text-white/40 text-sm line-clamp-2 leading-relaxed">
           {description}
         </p>
 
-        {/* Assignee */}
         <div className="flex items-center gap-2">
           <Avatar className="w-5 h-5">
-            <AvatarImage src="" />
+            <AvatarImage src={undefined} />
             <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white text-xs">
               <User className="w-3 h-3" />
             </AvatarFallback>
@@ -124,7 +115,6 @@ export function InProgressTaskCard({
           <span className="text-white/30 text-xs">{assignee}</span>
         </div>
 
-        {/* Time info */}
         <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
           <div className="flex items-center gap-1.5 text-white/40">
             <Clock className="w-3 h-3" />
@@ -136,21 +126,15 @@ export function InProgressTaskCard({
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="text-white/40">Progress</span>
-            <span className="text-purple-400">{Math.round(progress)}%</span>
+            <span className="text-purple-400">
+              {Math.round(progress)}%
+            </span>
           </div>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Progress 
-              value={progress} 
-              className="h-1.5 bg-white/5"
-            />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Progress value={progress} className="h-1.5 bg-white/5" />
           </motion.div>
         </div>
       </div>

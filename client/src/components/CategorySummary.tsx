@@ -8,12 +8,24 @@ interface CategorySummaryProps {
   index: number;
 }
 
-export function CategorySummary({ category, totalTasks, completedTasks, index }: CategorySummaryProps) {
+export function CategorySummary({
+  category,
+  totalTasks,
+  completedTasks,
+  index,
+}: CategorySummaryProps) {
   const isPersonal = category === 'Personal';
-  const bgColor = isPersonal ? 'from-purple-600/20 to-purple-700/20' : 'from-orange-600/20 to-orange-700/20';
-  const borderColor = isPersonal ? 'border-purple-600/30' : 'border-orange-600/30';
+  const bgColor = isPersonal
+    ? 'from-purple-600/20 to-purple-700/20'
+    : 'from-orange-600/20 to-orange-700/20';
+  const borderColor = isPersonal
+    ? 'border-purple-600/30'
+    : 'border-orange-600/30';
   const iconColor = isPersonal ? 'text-purple-500' : 'text-orange-500';
   const textColor = isPersonal ? 'text-purple-400' : 'text-orange-400';
+
+  const progress =
+    totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   return (
     <motion.div
@@ -44,9 +56,15 @@ export function CategorySummary({ category, totalTasks, completedTasks, index }:
           <div className="h-1.5 bg-black/20 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(completedTasks / totalTasks) * 100}%` }}
-              transition={{ delay: 0.2 + index * 0.1, duration: 0.5, ease: 'easeOut' }}
-              className={`h-full rounded-full ${isPersonal ? 'bg-purple-500' : 'bg-orange-500'}`}
+              animate={{ width: `${progress}%` }}
+              transition={{
+                delay: 0.2 + index * 0.1,
+                duration: 0.5,
+                ease: 'easeOut',
+              }}
+              className={`h-full rounded-full ${
+                isPersonal ? 'bg-purple-500' : 'bg-orange-500'
+              }`}
             />
           </div>
           <p className="text-white/40 text-xs">

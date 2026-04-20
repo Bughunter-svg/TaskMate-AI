@@ -1,8 +1,16 @@
+import { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { User, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, TrendingUp, AlertCircle, CheckCircle, Inbox } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
+
+interface Task {
+  id: string;
+  title: string;
+  status: 'Completed' | 'In Progress' | 'Pending';
+  assignee?: string;
+}
 
 interface TeamMember {
   name: string;
@@ -13,38 +21,46 @@ interface TeamMember {
   status: 'on-track' | 'slight-delay' | 'at-risk';
 }
 
-const teamMembers: TeamMember[] = [
-  {
-    name: 'Rana Kumar',
-    tasksDone: 18,
-    tasksPending: 5,
-    totalTasks: 23,
-    status: 'on-track',
-  },
-  {
-    name: 'Alice Chen',
-    tasksDone: 12,
-    tasksPending: 2,
-    totalTasks: 14,
-    status: 'on-track',
-  },
-  {
-    name: 'Suman Patel',
-    tasksDone: 9,
-    tasksPending: 8,
-    totalTasks: 17,
-    status: 'at-risk',
-  },
-  {
-    name: 'Marcus Johnson',
-    tasksDone: 15,
-    tasksPending: 4,
-    totalTasks: 19,
-    status: 'slight-delay',
-  },
-];
+interface TeamDashboardProps {
+  tasks?: Task[];
+}
 
-export function TeamDashboard() {
+export function TeamDashboard({ tasks = [] }: TeamDashboardProps) {
+  // Compute team members from real task data
+  const teamMembers = useMemo((): TeamMember[] => {
+    const assigneeMap: Record<string, { done: number; pending: number; inProgress: number }> = {};
+
+    tasks.forEach(task => {
+      const assignee = task.assignee || 'Unassigned';
+      if (!assigneeMap[assignee]) {
+        assigneeMap[assignee] = { done: 0, pending: 0, inProgress: 0 };
+      }
+      if (task.status === 'Completed') assigneeMap[assignee].done++;
+      else if (task.status === 'In Progress') assigneeMap[assignee].inProgress++;
+      else assigneeMap[assignee].pending++;
+    });
+
+    return Object.entries(assigneeMap).map(([name, stats]) => {
+      const total = stats.done + stats.pending + stats.inProgress;
+      const completionRate = total > 0 ? (stats.done / total) * 100 : 0;
+
+      let status: TeamMember['status'] = 'on-track';
+      if (completionRate < 40 && stats.pending > stats.done) {
+        status = 'at-risk';
+      } else if (completionRate < 60 && stats.inProgress > 0) {
+        status = 'slight-delay';
+      }
+
+      return {
+        name,
+        tasksDone: stats.done,
+        tasksPending: stats.pending + stats.inProgress,
+        totalTasks: total,
+        status,
+      };
+    });
+  }, [tasks]);
+
   const getStatusConfig = (status: TeamMember['status']) => {
     switch (status) {
       case 'on-track':
@@ -74,10 +90,19 @@ export function TeamDashboard() {
     }
   };
 
+  if (teamMembers.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl bg-[#1C1F26] border border-[#232834]">
+        <Inbox className="w-12 h-12 text-white/10" />
+        <p className="text-white/30 text-sm">No team members yet — assign tasks to team members to see performance</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {teamMembers.map((member, index) => {
-        const progress = (member.tasksDone / member.totalTasks) * 100;
+        const progress = member.totalTasks > 0 ? (member.tasksDone / member.totalTasks) * 100 : 0;
         const statusConfig = getStatusConfig(member.status);
         const StatusIcon = statusConfig.icon;
 

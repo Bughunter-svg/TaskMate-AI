@@ -1,0 +1,22 @@
+{
+  "userId": "test",
+  "tasks": [
+    {
+      "id": "2eca2fcf-cdb4-4e51-be9b-47c79498ea92",
+      "title": "aaaa",
+      "description": "aaaa",
+      "category": "Business",
+      "assignee": "You",
+      "status": "Pending",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T14:39:11.155Z",
+      "updatedAt": "2026-04-20T14:39:11.155Z",
+      "completedAt": null,
+      "reschedules": 0
+    }
+  ],
+  "stats": {
+    "totalTasks": 1,
+    "pendingTasks": 1
+  }
+}

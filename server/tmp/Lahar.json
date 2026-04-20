@@ -1,0 +1,22 @@
+{
+  "userId": "Lahar",
+  "tasks": [
+    {
+      "id": "cddcaa3a-13a9-41bf-905c-68dbcc7297f4",
+      "title": "11",
+      "description": "11111",
+      "category": "Personal",
+      "assignee": "You",
+      "status": "Pending",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T14:31:46.369Z",
+      "updatedAt": "2026-04-20T14:31:46.369Z",
+      "completedAt": null,
+      "reschedules": 0
+    }
+  ],
+  "stats": {
+    "totalTasks": 1,
+    "pendingTasks": 1
+  }
+}

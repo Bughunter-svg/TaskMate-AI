@@ -1,13 +1,20 @@
 // middleware/security.js
 const helmet = require('helmet');
-const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
 const morgan = require('morgan');
 
+// Allow any localhost origin for development
+const allowLocalhost = (origin, callback) => {
+  if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    return callback(null, true);
+  }
+  callback(new Error('Not allowed by CORS'));
+};
+
 const applySecurity = (app) => {
-  // HTTP security headers
-  app.use(helmet());
+  // HTTP security headers (disable crossOriginResourcePolicy so HMR + API work together)
+  app.use(helmet({ crossOriginResourcePolicy: false }));
 
   // Prevent XSS attacks
   app.use(xss());
@@ -15,17 +22,13 @@ const applySecurity = (app) => {
   // API request logging
   app.use(morgan('dev'));
 
-  // CORS setup
-  app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-  }));
+  // NOTE: CORS is intentionally NOT set here.
+  // It is set once in index.js to avoid duplicate / conflicting headers.
 
   // Rate limiting (anti DDoS)
   const limiter = rateLimit({
     windowMs: 10 * 60 * 1000, // 10 minutes
-    max: 100, // max requests
+    max: 200,
     message: 'Too many requests, please try again later 🕒',
   });
   app.use(limiter);

@@ -4,8 +4,8 @@ const connectDB = async () => {
   const uri = process.env.MONGO_URI;
 
   if (!uri) {
-    console.error("❌ MONGO_URI not found in .env file!");
-    process.exit(1);
+    console.warn("⚠️  MONGO_URI not set — MongoDB features (auth) will be unavailable.");
+    return;
   }
 
   try {

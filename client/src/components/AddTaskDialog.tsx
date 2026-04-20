@@ -7,7 +7,6 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Calendar, Clock, AlertCircle, Plus } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface AddTaskDialogProps {
   isOpen: boolean;
@@ -38,31 +37,17 @@ export function AddTaskDialog({ isOpen, onClose, onAddTask, mode }: AddTaskDialo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!taskTitle.trim()) {
-      toast.error('Task title is required');
-      return;
-    }
+    // Only title is required — all other fields are optional
+    if (!taskTitle.trim()) return;
 
-    if (!scheduledTime.trim()) {
-      toast.error('Schedule time is required');
-      return;
-    }
-
-    if (!deadline.trim()) {
-      toast.error('Deadline is required');
-      return;
-    }
-
-    // Create task object
     const newTask = {
-      title: taskTitle,
-      description: taskDescription || 'No description provided',
+      title: taskTitle.trim(),
+      description: taskDescription.trim() || 'No description provided',
       category,
       assignee: mode === 'solo' ? 'You' : assignee,
-      scheduledDate: scheduledDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      scheduledTime,
-      deadline,
+      scheduledDate: scheduledDate || new Date().toISOString().split('T')[0],
+      scheduledTime: scheduledTime || '',
+      deadline: deadline || '',
     };
 
     onAddTask(newTask);
@@ -75,11 +60,6 @@ export function AddTaskDialog({ isOpen, onClose, onAddTask, mode }: AddTaskDialo
     setScheduledDate('');
     setScheduledTime('');
     setDeadline('');
-
-    // Show success toast
-    toast.success('Task created successfully!', {
-      description: `${taskTitle} has been added to your tasks.`,
-    });
 
     onClose();
   };
@@ -109,6 +89,7 @@ export function AddTaskDialog({ isOpen, onClose, onAddTask, mode }: AddTaskDialo
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="Enter task name..."
               className="bg-[#15181E] border-[#232834] text-white placeholder:text-white/30 focus:border-purple-500/50"
+              required
             />
           </div>
 
@@ -187,7 +168,7 @@ export function AddTaskDialog({ isOpen, onClose, onAddTask, mode }: AddTaskDialo
             <div className="space-y-2">
               <Label htmlFor="scheduledTime" className="text-white/80 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                Schedule Time <span className="text-red-400">*</span>
+                Schedule Time
               </Label>
               <Input
                 id="scheduledTime"
@@ -203,7 +184,7 @@ export function AddTaskDialog({ isOpen, onClose, onAddTask, mode }: AddTaskDialo
           <div className="space-y-2">
             <Label htmlFor="deadline" className="text-white/80 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
-              Deadline <span className="text-red-400">*</span>
+              Deadline <span className="text-white/40 text-xs font-normal">(optional)</span>
             </Label>
             <Input
               id="deadline"
@@ -227,7 +208,8 @@ export function AddTaskDialog({ isOpen, onClose, onAddTask, mode }: AddTaskDialo
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                disabled={!taskTitle.trim()}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white disabled:opacity-50"
               >
                 Create Task
               </Button>

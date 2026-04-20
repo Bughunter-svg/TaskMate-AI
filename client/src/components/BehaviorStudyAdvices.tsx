@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Brain, TrendingUp, Clock, Zap, Target, MessageSquare, X, CheckCircle } from 'lucide-react';
+import { Brain, TrendingUp, Clock, Zap, Target, MessageSquare, X, CheckCircle, Inbox } from 'lucide-react';
 import { Button } from './ui/button';
+
+interface Task {
+  id: string;
+  title: string;
+  status: 'Completed' | 'In Progress' | 'Pending';
+  createdAt?: string;
+  completedAt?: string;
+}
 
 interface BehaviorInsight {
   id: string;
@@ -10,51 +18,101 @@ interface BehaviorInsight {
   message: string;
   icon: any;
   color: string;
-  action?: string;
 }
 
-const behaviorInsights: BehaviorInsight[] = [
-  {
-    id: '1',
-    type: 'peak-hours',
-    title: 'Peak Productivity Hours Detected',
-    message: 'You\'re most productive between 9:00 AM - 12:00 PM with 92% task completion rate. Consider scheduling complex tasks during this window.',
-    icon: Clock,
-    color: 'purple',
-  },
-  {
-    id: '2',
-    type: 'productivity',
-    title: 'Productivity Pattern Analysis',
-    message: 'You complete 3.2x more tasks on Tuesdays and Thursdays. Your focus drops by 40% after 3:00 PM on Mondays and Fridays.',
-    icon: TrendingUp,
-    color: 'blue',
-  },
-  {
-    id: '3',
-    type: 'recommendation',
-    title: 'Smart Break Suggestion',
-    message: 'Your productivity increases by 35% when you take 15-minute breaks every 90 minutes. Currently, you\'re taking breaks every 2.5 hours.',
-    icon: Zap,
-    color: 'orange',
-  },
-  {
-    id: '4',
-    type: 'decision',
-    title: 'AI Decision: Task Prioritization',
-    message: 'Based on your deadline patterns, I\'ve reprioritized 3 tasks. "API Integration Testing" should be moved to tomorrow morning for optimal completion.',
-    icon: Target,
-    color: 'green',
-  },
-];
+interface BehaviorStudyAdvicesProps {
+  tasks?: Task[];
+}
 
-export function BehaviorStudyAdvices() {
+export function BehaviorStudyAdvices({ tasks = [] }: BehaviorStudyAdvicesProps) {
   const [showPopup, setShowPopup] = useState(false);
   const [selectedInsight, setSelectedInsight] = useState<BehaviorInsight | null>(null);
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
 
+  const totalTasks = tasks.length;
+  const completed = tasks.filter(t => t.status === 'Completed').length;
+  const inProgress = tasks.filter(t => t.status === 'In Progress').length;
+  const pending = tasks.filter(t => t.status === 'Pending').length;
+  const completionRate = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+  // Generate dynamic insights based on real task data
+  const behaviorInsights = useMemo((): BehaviorInsight[] => {
+    if (totalTasks === 0) return [];
+
+    const insights: BehaviorInsight[] = [];
+
+    // Insight 1: Completion rate
+    if (completed > 0) {
+      insights.push({
+        id: '1',
+        type: 'productivity',
+        title: completionRate >= 70 ? 'Excellent Completion Rate' : completionRate >= 40 ? 'Steady Progress' : 'Room for Improvement',
+        message: `You've completed ${completed} out of ${totalTasks} tasks (${completionRate}%). ${
+          completionRate >= 70
+            ? 'Outstanding work! Keep maintaining this momentum.'
+            : completionRate >= 40
+            ? 'Good progress. Try to finish your in-progress tasks to boost your rate.'
+            : 'Focus on completing one task at a time to build momentum.'
+        }`,
+        icon: TrendingUp,
+        color: completionRate >= 70 ? 'green' : completionRate >= 40 ? 'blue' : 'orange',
+      });
+    }
+
+    // Insight 2: In-progress overload
+    if (inProgress > 3) {
+      insights.push({
+        id: '2',
+        type: 'recommendation',
+        title: 'Too Many Tasks In Progress',
+        message: `You have ${inProgress} tasks in progress simultaneously. Research shows productivity drops with more than 3 concurrent tasks. Consider finishing current work before starting new tasks.`,
+        icon: Zap,
+        color: 'orange',
+      });
+    } else if (inProgress > 0 && inProgress <= 3) {
+      insights.push({
+        id: '2',
+        type: 'recommendation',
+        title: 'Good Focus Level',
+        message: `You're managing ${inProgress} task${inProgress > 1 ? 's' : ''} in progress — that's a healthy workload. Stay focused and complete them before picking up more.`,
+        icon: Zap,
+        color: 'green',
+      });
+    }
+
+    // Insight 3: Pending backlog
+    if (pending > 0) {
+      insights.push({
+        id: '3',
+        type: 'decision',
+        title: pending > 5 ? 'Large Backlog Detected' : 'Pending Tasks Available',
+        message: `You have ${pending} pending task${pending > 1 ? 's' : ''} waiting to be started. ${
+          pending > 5
+            ? 'Consider prioritizing the most impactful ones first to manage your backlog effectively.'
+            : 'Pick up the highest priority task next to maintain steady progress.'
+        }`,
+        icon: Target,
+        color: pending > 5 ? 'orange' : 'blue',
+      });
+    }
+
+    // Insight 4: Peak hours suggestion (always show if there are tasks)
+    if (totalTasks > 0) {
+      insights.push({
+        id: '4',
+        type: 'peak-hours',
+        title: 'Productivity Tip',
+        message: `With ${totalTasks} total tasks, consider scheduling complex work during your peak focus hours (typically 9-11 AM). Start with your hardest pending task first for best results.`,
+        icon: Clock,
+        color: 'purple',
+      });
+    }
+
+    return insights;
+  }, [totalTasks, completed, inProgress, pending, completionRate]);
+
   const getColorClasses = (color: string) => {
-    const colors = {
+    const colors: Record<string, any> = {
       purple: {
         bg: 'bg-purple-500/10',
         border: 'border-purple-500/30',
@@ -84,7 +142,7 @@ export function BehaviorStudyAdvices() {
         gradient: 'from-green-600 to-emerald-600',
       },
     };
-    return colors[color as keyof typeof colors] || colors.purple;
+    return colors[color] || colors.purple;
   };
 
   const handleInsightClick = (insight: BehaviorInsight) => {
@@ -101,6 +159,10 @@ export function BehaviorStudyAdvices() {
   const visibleInsights = behaviorInsights.filter(
     insight => !dismissedInsights.includes(insight.id)
   );
+
+  // Compute dynamic stats
+  const avgFocusHours = totalTasks > 0 ? Math.min(8, (completed * 1.5 + inProgress * 0.5)).toFixed(1) : '0';
+  const productivityScore = totalTasks > 0 ? Math.min(100, Math.round(completionRate * 0.7 + (inProgress <= 3 ? 30 : 15))) : 0;
 
   return (
     <>
@@ -128,53 +190,62 @@ export function BehaviorStudyAdvices() {
         </div>
 
         {/* Insights Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {visibleInsights.map((insight, index) => {
-            const Icon = insight.icon;
-            const colors = getColorClasses(insight.color);
-            
-            return (
-              <motion.div
-                key={insight.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.02, y: -4 }}
-                onClick={() => handleInsightClick(insight)}
-                className={`relative p-5 rounded-2xl ${colors.bg} border ${colors.border} cursor-pointer group hover:shadow-lg hover:shadow-${insight.color}-500/20 transition-all duration-200`}
-              >
-                {/* Icon */}
-                <div className={`flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${colors.gradient} mb-4`}>
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-
-                {/* Content */}
-                <h3 className={`text-white mb-2 group-hover:${colors.text} transition-colors`}>
-                  {insight.title}
-                </h3>
-                <p className="text-white/60 text-sm leading-relaxed line-clamp-3">
-                  {insight.message}
-                </p>
-
-                {/* Badge */}
-                <div className="mt-4">
-                  <span className={`text-xs ${colors.text} px-3 py-1 rounded-full ${colors.bg} border ${colors.border}`}>
-                    {insight.type.replace('-', ' ').toUpperCase()}
-                  </span>
-                </div>
-
-                {/* Hover Arrow */}
+        {visibleInsights.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {visibleInsights.map((insight, index) => {
+              const Icon = insight.icon;
+              const colors = getColorClasses(insight.color);
+              
+              return (
                 <motion.div
-                  initial={{ x: 0, opacity: 0 }}
-                  whileHover={{ x: 4, opacity: 1 }}
-                  className={`absolute top-5 right-5 ${colors.text}`}
+                  key={insight.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  onClick={() => handleInsightClick(insight)}
+                  className={`relative p-5 rounded-2xl ${colors.bg} border ${colors.border} cursor-pointer group hover:shadow-lg transition-all duration-200`}
                 >
-                  →
+                  {/* Icon */}
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${colors.gradient} mb-4`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+
+                  {/* Content */}
+                  <h3 className="text-white mb-2">
+                    {insight.title}
+                  </h3>
+                  <p className="text-white/60 text-sm leading-relaxed line-clamp-3">
+                    {insight.message}
+                  </p>
+
+                  {/* Badge */}
+                  <div className="mt-4">
+                    <span className={`text-xs ${colors.text} px-3 py-1 rounded-full ${colors.bg} border ${colors.border}`}>
+                      {insight.type.replace('-', ' ').toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Hover Arrow */}
+                  <motion.div
+                    initial={{ x: 0, opacity: 0 }}
+                    whileHover={{ x: 4, opacity: 1 }}
+                    className={`absolute top-5 right-5 ${colors.text}`}
+                  >
+                    →
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 rounded-2xl bg-[#1C1F26] border border-[#232834]">
+            <Inbox className="w-12 h-12 text-white/10" />
+            <p className="text-white/30 text-sm">
+              {totalTasks === 0 ? 'Create tasks to get AI-powered insights' : 'All insights dismissed'}
+            </p>
+          </div>
+        )}
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -186,10 +257,10 @@ export function BehaviorStudyAdvices() {
           >
             <div className="flex items-center gap-3 mb-2">
               <Clock className="w-5 h-5 text-purple-400" />
-              <span className="text-white/70">Average Focus Time</span>
+              <span className="text-white/70">Estimated Focus Time</span>
             </div>
-            <p className="text-3xl text-white">2.4 hrs</p>
-            <p className="text-sm text-green-400 mt-1">↑ 18% from last week</p>
+            <p className="text-3xl text-white">{avgFocusHours} hrs</p>
+            <p className="text-sm text-white/40 mt-1">Based on task activity</p>
           </motion.div>
 
           <motion.div
@@ -202,8 +273,10 @@ export function BehaviorStudyAdvices() {
               <TrendingUp className="w-5 h-5 text-blue-400" />
               <span className="text-white/70">Productivity Score</span>
             </div>
-            <p className="text-3xl text-white">87/100</p>
-            <p className="text-sm text-blue-400 mt-1">Above average</p>
+            <p className="text-3xl text-white">{productivityScore}/100</p>
+            <p className="text-sm text-white/40 mt-1">
+              {productivityScore >= 70 ? 'Excellent' : productivityScore >= 40 ? 'Good' : totalTasks > 0 ? 'Getting started' : 'No data yet'}
+            </p>
           </motion.div>
 
           <motion.div
@@ -214,10 +287,12 @@ export function BehaviorStudyAdvices() {
           >
             <div className="flex items-center gap-3 mb-2">
               <Target className="w-5 h-5 text-green-400" />
-              <span className="text-white/70">Goals Achieved</span>
+              <span className="text-white/70">Tasks Completed</span>
             </div>
-            <p className="text-3xl text-white">12/15</p>
-            <p className="text-sm text-green-400 mt-1">80% completion rate</p>
+            <p className="text-3xl text-white">{completed}/{totalTasks}</p>
+            <p className="text-sm text-white/40 mt-1">
+              {totalTasks > 0 ? `${completionRate}% completion rate` : 'No tasks yet'}
+            </p>
           </motion.div>
         </div>
       </motion.div>
@@ -267,9 +342,9 @@ export function BehaviorStudyAdvices() {
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
                   <div>
-                    <p className="text-white/90 mb-1">What This Means</p>
+                    <p className="text-white/90 mb-1">Your Current Stats</p>
                     <p className="text-white/60 text-sm">
-                      Our AI has analyzed over 120 hours of your work patterns to identify optimal productivity windows.
+                      {completed} completed, {inProgress} in progress, {pending} pending — {completionRate}% completion rate.
                     </p>
                   </div>
                 </div>
@@ -279,7 +354,11 @@ export function BehaviorStudyAdvices() {
                   <div>
                     <p className="text-white/90 mb-1">Recommended Action</p>
                     <p className="text-white/60 text-sm">
-                      Schedule your most important tasks during your peak hours and save routine tasks for lower-energy periods.
+                      {inProgress > 3
+                        ? 'Focus on completing your in-progress tasks before starting new ones.'
+                        : pending > 0
+                        ? 'Pick up your next pending task when you finish your current work.'
+                        : 'Great job! Consider adding new tasks to keep your momentum going.'}
                     </p>
                   </div>
                 </div>
@@ -291,7 +370,7 @@ export function BehaviorStudyAdvices() {
                   onClick={() => handleDismiss(selectedInsight.id)}
                   className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500"
                 >
-                  Apply Suggestion
+                  Got It
                 </Button>
                 <Button
                   onClick={() => setShowPopup(false)}

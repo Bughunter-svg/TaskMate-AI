@@ -77,9 +77,13 @@ export default function App() {
 
     (async () => {
       try {
-        const res = await fetch(`http://localhost:4000/api/tasks/${currentUser.username}`,{credentials: 'include'});
+        const res = await fetch(`http://localhost:4000/api/tasks/${currentUser.username}`);
         const data = await res.json();
-        setTasks(data.tasks || []);
+        if (data.success) {
+          setTasks(data.tasks || []);
+        } else {
+          toast.error('Failed to load tasks');
+        }
       } catch (err) {
         console.error(err);
         toast.error('Failed to load tasks');
@@ -92,22 +96,27 @@ export default function App() {
      MUTATIONS (FIXED)
   ========================= */
   const handleAddTask = async (taskData: any) => {
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...taskData,
-        userId: currentUser.username,
-      }),
-    });
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...taskData,
+          userId: currentUser.username,
+        }),
+      });
 
-    const data = await res.json();
-    if(!data.success){
-    	toast.error(data.error || 'Failed to add task');
-    	return;
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error || 'Failed to add task');
+        return;
+      }
+      setTasks(prev => [...prev, data.task]);
+      toast.success('Task added successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to add task');
     }
-    setTasks(prev => [...prev, data.task]);
-    toast.success('Task added');
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -292,11 +301,11 @@ export default function App() {
                           Track your personal productivity and task completion trends.
                         </p>
                       </div>
-                      <SoloModeGraphs />
+                      <SoloModeGraphs tasks={soloTasks} />
                     </div>
 
                     {/* Daily Timeline */}
-                    <DailyTimeline />
+                    <DailyTimeline tasks={soloTasks} />
 
                     {/* Task Section */}
                     <div className="space-y-6">
@@ -448,7 +457,7 @@ export default function App() {
                     </div>
 
                     {/* Behavior Study and Advices - Solo Mode */}
-                    <BehaviorStudyAdvices />
+                    <BehaviorStudyAdvices tasks={soloTasks} />
 
                     {/* Daily Report Analysis - Solo Mode - Moved to End */}
                     <DailyReportAnalysis tasks={soloTasks} mode="solo" />
@@ -472,11 +481,11 @@ export default function App() {
                       Visual insights into team performance and task distribution.
                     </p>
                   </div>
-                  <TeamModeGraphs />
+                  <TeamModeGraphs tasks={tasks} />
                 </div>
 
                 {/* Enhanced Prediction Intelligence */}
-                <EnhancedPredictionIntelligence />
+                <EnhancedPredictionIntelligence tasks={tasks} />
 
                 {/* Team Performance Dashboard */}
                 <div className="space-y-6">
@@ -487,7 +496,7 @@ export default function App() {
                     </p>
                   </div>
 
-                  <TeamDashboard />
+                  <TeamDashboard tasks={tasks} />
                 </div>
 
                 {/* Team Tasks - 3 Column Kanban */}

@@ -54,7 +54,7 @@ router.post("/", async (req, res) => {
       title,
       description: description || "",
       category: category || "Personal",
-      assignee: "you",
+      assignee: "You",
       status: "Pending",
       scheduledAt: scheduledAt || null,
       createdAt: new Date().toISOString(),

@@ -102,7 +102,6 @@
 | Nodemon | Dev auto-restart |
 | Express Rate Limit | DDoS / abuse protection |
 | Express Validator | Request validation |
-| Google APIs | OAuth & Sheets integration |
 
 ---
 
@@ -150,22 +149,24 @@ TaskMate-AI/
 │
 └── server/                        # Backend Express app
     ├── index.js                   # App entry point, middleware, Socket.IO
+    ├── nodemon.json               # Nodemon config (ignores .env changes)
     ├── config/
-    │   └── db.js                  # MongoDB connection
+    │   └── db.js                  # MongoDB Atlas connection via Mongoose
     ├── middleware/
     │   ├── authMiddleware.js      # JWT verification
     │   └── security.js            # Helmet & security setup
-    ├── models/                    # Mongoose schemas
+    ├── models/
+    │   ├── User.js                # User schema (name, email, username, bcrypt password)
+    │   └── Task.js                # Task schema (userId string, status, category, etc.)
     ├── routes/
-    │   ├── auth.js                # POST /api/auth/login, /signup
-    │   ├── tasks.js               # CRUD /api/tasks
+    │   ├── auth.js                # POST /api/auth/signup, /api/auth/login
+    │   ├── tasks.js               # Full CRUD /api/tasks → MongoDB
     │   ├── logs.js                # Activity logs
     │   ├── session.js             # Session management
     │   ├── team.js                # Team routes (auth-protected)
     │   └── ai.js                  # Gemini AI routes
     ├── services/                  # Business logic
-    ├── utils/                     # Helper functions
-    └── store/                     # In-memory / shared state
+    └── utils/                     # Helper functions
 ```
 
 ---
@@ -175,7 +176,7 @@ TaskMate-AI/
 ### Prerequisites
 
 - **Node.js** v18 or higher
-- **MongoDB** running locally (`mongod`) or a MongoDB Atlas URI
+- **MongoDB Atlas** account (free tier works) — [cloud.mongodb.com](https://cloud.mongodb.com)
 - **npm** v9+
 - A **Google Gemini API key** (free at [Google AI Studio](https://aistudio.google.com/))
 
@@ -201,12 +202,14 @@ Create a `.env` file inside `/server`:
 
 ```env
 PORT=4000
-MONGO_URI=mongodb://127.0.0.1:27017/taskmate
-JWT_SECRET=your_super_secret_jwt_key
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/taskmate?appName=Cluster0
+JWT_SECRET=your_super_secret_jwt_key_here
 FRONTEND_URL=http://localhost:5173
 
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+> 💡 Get your `MONGO_URI` from MongoDB Atlas → **Connect** → **Drivers**. Make sure to whitelist your IP under **Network Access**.
 
 Start the backend dev server:
 
@@ -281,6 +284,39 @@ All routes are prefixed with `/api`.
 
 ---
 
+## 🗄 Data Architecture
+
+All persistent data lives in **MongoDB Atlas** (`taskmate` database).
+
+### Collections
+
+| Collection | Populated by | Description |
+|---|---|---|
+| `users` | `POST /api/auth/signup` | Stores name, email, username, bcrypt-hashed password |
+| `tasks` | `POST /api/tasks` | Stores tasks with `userId` (username string) as the owner key |
+| `activities` | Activity events | User activity log entries |
+| `activitylogs` | System events | Broader system-level log entries |
+
+### Auth Flow
+
+```
+Sign Up  →  POST /api/auth/signup  →  bcrypt.hash(password)  →  User.create()  →  MongoDB
+Sign In  →  POST /api/auth/login   →  bcrypt.compare()       →  jwt.sign()     →  Token returned
+```
+
+### Task Ownership
+
+Tasks store `userId` as the user's **username string** (e.g. `"john_doe"`), not a MongoDB ObjectId. This means task queries are always scoped by username.
+
+```
+GET /api/tasks/:userId  →  Task.find({ userId })  →  Returns tasks array
+POST /api/tasks         →  Task.create({ userId, ...fields })  →  Returns saved task with id
+```
+
+> The backend maps MongoDB's `_id` → `id` in all responses so the frontend never needs to handle `_id` directly.
+
+---
+
 ## ⚙️ Environment Variables
 
 ### Server (`server/.env`)
@@ -288,14 +324,12 @@ All routes are prefixed with `/api`.
 | Variable | Required | Description |
 |---|---|---|
 | `PORT` | Yes | Port for the Express server (default `4000`) |
-| `MONGO_URI` | Yes | MongoDB connection string |
-| `JWT_SECRET` | Yes | Secret key for signing JWTs |
+| `MONGO_URI` | Yes | MongoDB Atlas connection string (includes `/taskmate` database name) |
+| `JWT_SECRET` | Yes | Secret key for signing JWTs — use a long random string |
 | `FRONTEND_URL` | Yes | Allowed CORS origin (your frontend URL) |
 | `GEMINI_API_KEY` | Yes | Google Gemini API key for AI features |
-| `GOOGLE_CLIENT_ID` | Optional | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | Optional | Google OAuth client secret |
 
-> ⚠️ **Never commit your `.env` file.** It is already listed in `.gitignore`.
+> ⚠️ **Never commit your `.env` file.** It is already in `.gitignore`.
 
 ---
 
@@ -312,10 +346,12 @@ All routes are prefixed with `/api`.
 
 ## 🧪 Development Notes
 
-- The frontend dev server proxies API requests through Vite (`/api → http://localhost:4000`)
-- Backend uses `nodemon` for hot-reload during development
-- Rate limiting is set to **100 requests / 10 minutes** per IP — disable during load testing
-- The Gemini AI route is unauthenticated by default; add `authMiddleware` if you need to protect it
+- All user and task data is persisted to **MongoDB Atlas** — data survives server restarts
+- Auth is fully API-based: signup hashes passwords with `bcrypt`, login verifies and returns a JWT
+- `nodemon.json` is configured to **ignore `.env`** changes — editing env vars won't interrupt in-flight requests
+- Rate limiting is set to **100 requests / 10 minutes** per IP — lower for production, disable for load testing
+- The Gemini AI route is unauthenticated by default; add `authMiddleware` to protect it
+- Frontend uses `http://localhost:4000` directly (no Vite proxy) — update `API` constant in `App.tsx` for production
 
 ---
 

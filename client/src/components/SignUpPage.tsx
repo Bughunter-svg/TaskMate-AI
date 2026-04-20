@@ -21,11 +21,11 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validation
+    // Client-side validation
     if (!name || !email || !username || !password || !confirmPassword) {
       setError('All fields are required');
       return;
@@ -48,35 +48,26 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
 
     setIsLoading(true);
 
-    // Check if username or email already exists
-    const users = JSON.parse(localStorage.getItem('taskmate_users') || '[]');
-    const userExists = users.find(
-      (u: any) => u.username === username || u.email === email
-    );
+    try {
+      const res = await fetch('http://localhost:4000/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, username, password }),
+      });
 
-    if (userExists) {
-      setIsLoading(false);
-      setError('Username or email already exists');
-      return;
-    }
+      const data = await res.json();
 
-    // Save user to localStorage
-    const newUser = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      username,
-      password, // In production, this should be hashed!
-      createdAt: new Date().toISOString(),
-    };
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Signup failed. Please try again.');
+        setIsLoading(false);
+        return;
+      }
 
-    users.push(newUser);
-    localStorage.setItem('taskmate_users', JSON.stringify(users));
-
-    // Simulate loading animation
-    setTimeout(() => {
       onSignUp({ name, email, username });
-    }, 600);
+    } catch (err) {
+      setError('Cannot connect to server. Make sure the backend is running.');
+      setIsLoading(false);
+    }
   };
 
   return (

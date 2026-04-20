@@ -18,29 +18,35 @@ export function LoginPage({ onLogin, onSwitchToSignUp }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Check credentials against localStorage
-    const users = JSON.parse(localStorage.getItem('taskmate_users') || '[]');
-    const user = users.find(
-      (u: any) => u.username === username && u.password === password
-    );
+    try {
+      const res = await fetch('http://localhost:4000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
 
-    setTimeout(() => {
-      if (user) {
-        // Store current user session
-        if (rememberMe) {
-          localStorage.setItem('taskmate_current_user', JSON.stringify(user));
-        }
-        onLogin({ name: user.name, email: user.email, username: user.username });
-      } else {
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Invalid username or password');
         setIsLoading(false);
-        setError('Invalid username or password');
+        return;
       }
-    }, 600);
+
+      if (rememberMe) {
+        localStorage.setItem('taskmate_current_user', JSON.stringify(data.user));
+      }
+
+      onLogin({ name: data.user.name, email: data.user.email, username: data.user.username });
+    } catch (err) {
+      setError('Cannot connect to server. Make sure the backend is running.');
+      setIsLoading(false);
+    }
   };
 
   return (

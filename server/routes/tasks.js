@@ -1,37 +1,29 @@
 const express = require("express");
-const crypto = require("crypto");
-
 const router = express.Router();
-
-const { getUser, setUser } = require("../store/userStore");
-const { loadUserData, saveUserData } = require("../config/googleDrive");
-
-/* ---------------------------------
-   Helper: normalize user state
----------------------------------- */
-function normalizeUser(user, userId) {
-  if (!user || typeof user !== "object") {
-    return {
-      userId,
-      tasks: [],
-      stats: {},
-    };
-  }
-
-  if (!Array.isArray(user.tasks)) user.tasks = [];
-  if (!user.stats || typeof user.stats !== "object") user.stats = {};
-
-  return user;
-}
+const Task = require("../models/Task");
 
 /* ---------------------------------
    POST /api/tasks
-   Add task (auto-hydrating)
+   Create a new task
 ---------------------------------- */
 router.post("/", async (req, res) => {
   console.log("🔥 /api/tasks HIT", req.body);
   try {
-    const { userId, title, description, scheduledAt, category } = req.body;
+    const {
+      userId,
+      title,
+      description,
+      category,
+      assignee,
+      isShared,
+      sharedWith,
+      scheduledDate,
+      scheduledTime,
+      deadline,
+      startedAt,
+      progress,
+      imageUrl,
+    } = req.body;
 
     if (!userId || !title) {
       return res.status(400).json({
@@ -40,42 +32,27 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Load from memory or Drive
-    let user = getUser(userId);
-    if (!user) {
-      user = await loadUserData(userId);
-    }
-
-    // Normalize state (CRITICAL)
-    user = normalizeUser(user, userId);
-
-    const task = {
-      id: crypto.randomUUID(),
+    const task = await Task.create({
+      userId,
       title,
       description: description || "",
       category: category || "Personal",
-      assignee: "You",
+      assignee: assignee || "You",
+      isShared: isShared || false,
+      sharedWith: sharedWith || "",
+      scheduledDate: scheduledDate || "",
+      scheduledTime: scheduledTime || "",
+      deadline: deadline || "",
+      startedAt: startedAt || "",
+      progress: progress || 0,
+      imageUrl: imageUrl || "",
       status: "Pending",
-      scheduledAt: scheduledAt || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      completedAt: null,
-      reschedules: 0,
-    };
+    });
 
-    user.tasks.push(task);
-
-    user.stats.totalTasks = (user.stats.totalTasks || 0) + 1;
-    user.stats.pendingTasks = (user.stats.pendingTasks || 0) + 1;
-
-    // Update cache + persist
-    setUser(userId, user);
-    await saveUserData(userId, user);
-
+    // Return in the shape the frontend expects (id not _id)
     return res.status(201).json({
       success: true,
-      task,
-      userStats: user.stats,
+      task: formatTask(task),
     });
   } catch (err) {
     console.error("ADD TASK ERROR:", err);
@@ -88,58 +65,17 @@ router.post("/", async (req, res) => {
 
 /* ---------------------------------
    GET /api/tasks/:userId
-   Get all tasks (auto-hydrating)
+   Get all tasks for a user
 ---------------------------------- */
-/* ---------------------------------
-   GET /api/tasks?userId=xxx
----------------------------------- */
-router.get("/", async (req, res) => {
-  try {
-    const { userId } = req.query;
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: "userId is required",
-      });
-    }
-
-    let user = getUser(userId);
-    if (!user) {
-      user = await loadUserData(userId);
-    }
-
-    user = normalizeUser(user, userId);
-    setUser(userId, user);
-
-    return res.json({
-      success: true,
-      tasks: user.tasks,
-    });
-  } catch (err) {
-    console.error("GET TASKS ERROR:", err);
-    return res.status(500).json({
-      success: false,
-      error: err.message || "Failed to load tasks",
-    });
-  }
-});
-
 router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
-    let user = getUser(userId);
-    if (!user) {
-      user = await loadUserData(userId);
-    }
-
-    user = normalizeUser(user, userId);
-    setUser(userId, user);
+    const tasks = await Task.find({ userId }).sort({ createdAt: -1 });
 
     return res.json({
       success: true,
-      tasks: user.tasks,
+      tasks: tasks.map(formatTask),
     });
   } catch (err) {
     console.error("GET TASKS ERROR:", err);
@@ -152,54 +88,29 @@ router.get("/:userId", async (req, res) => {
 
 /* ---------------------------------
    PUT /api/tasks/:taskId
-   Update task (status / schedule)
+   Update a task
 ---------------------------------- */
 router.put("/:taskId", async (req, res) => {
   try {
-    const { userId, ...updates } = req.body;
     const { taskId } = req.params;
+    const { userId, ...updates } = req.body;
 
     if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: "userId required",
-      });
+      return res.status(400).json({ success: false, error: "userId required" });
     }
 
-    let user = getUser(userId);
-    if (!user) {
-      user = await loadUserData(userId);
+    if (updates.status === "Completed") {
+      updates.completedAt = new Date();
+      updates.completedBy = updates.completedBy || userId;
     }
 
-    user = normalizeUser(user, userId);
+    const task = await Task.findByIdAndUpdate(taskId, updates, { new: true });
 
-    const task = user.tasks.find((t) => t.id === taskId);
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        error: "Task not found",
-      });
+      return res.status(404).json({ success: false, error: "Task not found" });
     }
 
-    Object.assign(task, updates);
-    task.updatedAt = new Date().toISOString();
-
-    if (updates.status === "Completed" && !task.completedAt) {
-      task.completedAt = new Date().toISOString();
-      user.stats.pendingTasks = Math.max(
-        (user.stats.pendingTasks || 1) - 1,
-        0
-      );
-      user.stats.completedTasks = (user.stats.completedTasks || 0) + 1;
-    }
-
-    setUser(userId, user);
-    await saveUserData(userId, user);
-
-    return res.json({
-      success: true,
-      task,
-    });
+    return res.json({ success: true, task: formatTask(task) });
   } catch (err) {
     console.error("UPDATE TASK ERROR:", err);
     return res.status(500).json({
@@ -214,35 +125,18 @@ router.put("/:taskId", async (req, res) => {
 ---------------------------------- */
 router.delete("/:taskId", async (req, res) => {
   try {
-    const { userId } = req.body;
     const { taskId } = req.params;
+    const { userId } = req.body;
 
     if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: "userId required",
-      });
+      return res.status(400).json({ success: false, error: "userId required" });
     }
 
-    let user = getUser(userId);
-    if (!user) {
-      user = await loadUserData(userId);
+    const task = await Task.findByIdAndDelete(taskId);
+
+    if (!task) {
+      return res.status(404).json({ success: false, error: "Task not found" });
     }
-
-    user = normalizeUser(user, userId);
-
-    const before = user.tasks.length;
-    user.tasks = user.tasks.filter((t) => t.id !== taskId);
-
-    if (user.tasks.length === before) {
-      return res.status(404).json({
-        success: false,
-        error: "Task not found",
-      });
-    }
-
-    setUser(userId, user);
-    await saveUserData(userId, user);
 
     return res.json({ success: true });
   } catch (err) {
@@ -253,5 +147,17 @@ router.delete("/:taskId", async (req, res) => {
     });
   }
 });
+
+/* ---------------------------------
+   Helper: format Mongoose doc for frontend
+   Maps _id → id
+---------------------------------- */
+function formatTask(doc) {
+  const obj = doc.toObject();
+  obj.id = obj._id.toString();
+  delete obj._id;
+  delete obj.__v;
+  return obj;
+}
 
 module.exports = router;

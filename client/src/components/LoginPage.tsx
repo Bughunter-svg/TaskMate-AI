@@ -11,7 +11,7 @@ interface LoginPageProps {
   onSwitchToSignUp: () => void;
 }
 
-export function LoginPage({ onLogin, onSwitchToSignUp }: LoginPagePro	ps) {
+export function LoginPage({ onLogin, onSwitchToSignUp }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);

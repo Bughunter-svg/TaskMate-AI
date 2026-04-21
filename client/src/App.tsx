@@ -49,8 +49,7 @@ interface Task {
   deadline?: string;
 }
 
-const API = 'http://localhost:4000/api/tasks';
-
+const API = 'https://taskmate-ai-hy5o.onrender.com/api/tasks';
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -90,7 +89,7 @@ export default function App() {
       }
     })();
   }, [currentUser]);
-  
+
 
   /* =========================
      MUTATIONS (FIXED)
@@ -218,7 +217,7 @@ export default function App() {
         {/* Main Content */}
         <div className="max-w-[1600px] mx-auto px-8 py-8">
           {/* Mode Toggle */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center justify-center gap-2 mb-12"
@@ -226,11 +225,10 @@ export default function App() {
             <div className="inline-flex rounded-2xl bg-[#1C1F26] border border-[#232834] p-1.5">
               <button
                 onClick={() => setMode('solo')}
-                className={`relative px-8 py-2.5 rounded-xl transition-all duration-200 ${
-                  mode === 'solo'
+                className={`relative px-8 py-2.5 rounded-xl transition-all duration-200 ${mode === 'solo'
                     ? 'text-white'
                     : 'text-white/50 hover:text-white/80'
-                }`}
+                  }`}
               >
                 {mode === 'solo' && (
                   <motion.div
@@ -241,14 +239,13 @@ export default function App() {
                 )}
                 <span className="relative z-10">Solo Mode</span>
               </button>
-              
+
               <button
                 onClick={() => setMode('team')}
-                className={`relative px-8 py-2.5 rounded-xl transition-all duration-200 ${
-                  mode === 'team'
+                className={`relative px-8 py-2.5 rounded-xl transition-all duration-200 ${mode === 'team'
                     ? 'text-white'
                     : 'text-white/50 hover:text-white/80'
-                }`}
+                  }`}
               >
                 {mode === 'team' && (
                   <motion.div
@@ -277,7 +274,7 @@ export default function App() {
                 <WelcomeBanner />
 
                 {/* Stats Overview */}
-                <StatsOverview 
+                <StatsOverview
                   completedCount={completedCount}
                   inProgressCount={inProgressCount}
                   pendingCount={pendingCount}
@@ -316,27 +313,27 @@ export default function App() {
                             Managing your tasks is easy with TaskMate AI. Drag and drop to change status.
                           </p>
                         </div>
-                        
+
                         {/* Category Summary Cards and Bell Icon */}
                         <div className="flex items-center gap-3">
-                          <CategorySummary 
-                            category="Personal" 
-                            totalTasks={personalTasks.length} 
-                            completedTasks={personalCompleted} 
-                            index={0} 
+                          <CategorySummary
+                            category="Personal"
+                            totalTasks={personalTasks.length}
+                            completedTasks={personalCompleted}
+                            index={0}
                           />
-                          <CategorySummary 
-                            category="Business" 
-                            totalTasks={businessTasks.length} 
-                            completedTasks={businessCompleted} 
-                            index={1} 
+                          <CategorySummary
+                            category="Business"
+                            totalTasks={businessTasks.length}
+                            completedTasks={businessCompleted}
+                            index={1}
                           />
                           <RemindersPopover />
                         </div>
                       </div>
 
                       {/* Large Container Box Around All Columns */}
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -348,7 +345,7 @@ export default function App() {
                           <DroppableColumn status="Completed" onDrop={handleTaskDrop} color="green">
                             <div className="relative">
                               <div className="absolute inset-0 bg-green-500/5 rounded-2xl -z-10" />
-                              
+
                               <div className="space-y-4 p-4">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1C1F26]/80 border border-green-500/20">
                                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -381,7 +378,7 @@ export default function App() {
                           <DroppableColumn status="In Progress" onDrop={handleTaskDrop} color="purple">
                             <div className="relative">
                               <div className="absolute inset-0 bg-purple-500/5 rounded-2xl -z-10" />
-                              
+
                               <div className="space-y-4 p-4">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1C1F26]/80 border border-purple-500/20">
                                   <div className="w-2 h-2 rounded-full bg-purple-500"></div>
@@ -419,7 +416,7 @@ export default function App() {
                           <DroppableColumn status="Pending" onDrop={handleTaskDrop} color="orange">
                             <div className="relative">
                               <div className="absolute inset-0 bg-orange-500/5 rounded-2xl -z-10" />
-                              
+
                               <div className="space-y-4 p-4">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1C1F26]/80 border border-orange-500/20">
                                   <div className="w-2 h-2 rounded-full bg-orange-500"></div>

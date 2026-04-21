@@ -11,7 +11,7 @@ interface LoginPageProps {
   onSwitchToSignUp: () => void;
 }
 
-export function LoginPage({ onLogin, onSwitchToSignUp }: LoginPageProps) {
+export function LoginPage({ onLogin, onSwitchToSignUp }: LoginPagePro	ps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -24,7 +24,7 @@ export function LoginPage({ onLogin, onSwitchToSignUp }: LoginPageProps) {
     setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:4000/api/auth/login', {
+      const res = await fetch('https://taskmate-ai-hy5o.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

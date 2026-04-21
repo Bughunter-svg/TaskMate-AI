@@ -49,7 +49,36 @@ export function SignUpPage({ onSignUp, onSwitchToLogin }: SignUpPageProps) {
     setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:4000/api/auth/signup', {
+      const res = await fetch('import { useState } from 'react';
+import { motion } from 'motion/react';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
+import { Sparkles, Lock, User } from 'lucide-react';
+import logoImage from '../assets/images/d2fd37b4fb8ffdb0a4ee59a7c194f6eedb951d00.png';
+
+interface LoginPageProps {
+  onLogin: (userData: { name: string; email: string; username: string }) => void;
+  onSwitchToSignUp: () => void;
+}
+
+export function LoginPage({ onLogin, onSwitchToSignUp }: LoginPageProps) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('https://taskmate-ai-hy5o.onrender.com/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, username, password }),

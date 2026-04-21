@@ -76,7 +76,7 @@ export default function App() {
 
     (async () => {
       try {
-        const res = await fetch(`http://localhost:4000/api/tasks/${currentUser.username}`);
+        const res = await fetch(`${API}/${currentUser.username}`);
         const data = await res.json();
         if (data.success) {
           setTasks(data.tasks || []);

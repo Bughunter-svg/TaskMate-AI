@@ -18,7 +18,7 @@ router.post("/chat", async (req, res) => {
     }
 
     const API_KEY = process.env.GEMINI_API_KEY;
-    const MODEL = "gemini-1.5-flash";
+    const MODEL = "gemini-2.5-flash";
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
@@ -76,7 +76,7 @@ router.get("/test", async (req, res) => {
     const API_KEY = process.env.GEMINI_API_KEY;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash?key=${API_KEY}`
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash?key=${API_KEY}`
     );
 
     const data = await response.json();
@@ -102,7 +102,7 @@ router.get("/summary", async (req, res) => {
     const API_KEY = process.env.GEMINI_API_KEY;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

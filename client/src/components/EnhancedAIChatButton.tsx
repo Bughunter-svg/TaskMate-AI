@@ -311,6 +311,7 @@ export function EnhancedAIChatButton({ currentMode: appMode = 'solo', tasks = []
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean; isConfirmation?: boolean; pendingTasks?: any[] }>>([]);
   const [pendingTasksToCreate, setPendingTasksToCreate] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleModeSelect = (mode: AIMode) => {
@@ -399,134 +400,103 @@ export function EnhancedAIChatButton({ currentMode: appMode = 'solo', tasks = []
     setPendingTasksToCreate(null);
   };
 
-  const handleSend = () => {
+  const callGeminiAPI = async (userMessage: string, modeContext: string): Promise<string> => {
+    try {
+      const BACKEND = import.meta.env.VITE_API_URL || 'https://taskmate-ai-hy5o.onrender.com';
+      const res = await fetch(`${BACKEND}/api/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: 'User',
+          message: `${modeContext}\n\nUser: ${userMessage}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.reply) return data.reply;
+      return 'I had trouble connecting. Please try again!';
+    } catch {
+      return 'Network error — make sure the server is running.';
+    }
+  };
+
+  const handleSend = async () => {
     if (!message.trim() && attachedFiles.length === 0) return;
-    
+
     let messageText = message;
     if (attachedFiles.length > 0) {
       messageText += `\n📎 Attached ${attachedFiles.length} file(s)`;
     }
-    
+
     setMessages(prev => [...prev, { text: messageText, isUser: true }]);
-    
-    // Simulate AI response based on mode
-    setTimeout(() => {
-      let response = '';
-      
-      switch (selectedMode) {
-        case 'plan':
-          // Parse tasks from message
-          const { soloTasks, teamTasks, isTeamTask, isSoloTask, needsConfirmation, suggestedMode } = parseTasksFromMessage(
-            message,
-            appMode,
-            'You'
-          );
-          
-          const allParsedTasks = [...soloTasks, ...teamTasks];
-          
-          if (allParsedTasks.length > 0) {
-            // Build task summary
-            const taskList = allParsedTasks.map((t, i) => `${i + 1}. ${t.title} (${t.assignee})${t.status === 'Completed' ? ' ✅' : t.status === 'In Progress' ? ' 🔄' : ''}`).join('\n   ');
-            
-            if (needsConfirmation) {
-              // Ask for confirmation with mode awareness
-              let confirmationQuestion = '';
-              
-              if (isTeamTask && !isSoloTask && appMode === 'solo') {
-                // User wants team tasks but is in solo mode
-                response = `🎯 I found ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''} for your team:\n\n   ${taskList}\n\n⚠️ You're currently in Solo Mode, but these look like team tasks. Should I:\n\n1️⃣ Switch to Team Mode and create these tasks there?\n2️⃣ Create them in Solo Mode and assign all to you?`;
-              } else if (isSoloTask && !isTeamTask && appMode === 'team') {
-                // User wants solo tasks but is in team mode
-                response = `🎯 I found ${allParsedTasks.length} personal task${allParsedTasks.length > 1 ? 's' : ''} for you:\n\n   ${taskList}\n\n💡 You're in Team Mode, but these are your personal tasks. Should I:\n\n1️⃣ Switch to Solo Mode and create these tasks there?\n2️⃣ Create them in Team Mode anyway?`;
-              } else if (allParsedTasks.length > 5) {
-                // Too many tasks
-                response = `🎯 Wow! I found ${allParsedTasks.length} tasks:\n\n   ${taskList}\n\nThat's quite a list! Would you like me to create all of these on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard?`;
-              } else {
-                // General confirmation
-                response = `🎯 Great! I found ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''}:\n\n   ${taskList}\n\nWould you like me to create these on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard?`;
-              }
-              
-              // Store pending tasks with suggested mode
-              setPendingTasksToCreate(allParsedTasks.map(t => ({
-                ...t,
-                scheduledDate: 'Nov 10',
-                scheduledTime: '10:00 AM',
-                deadline: 'Nov 15',
-                suggestedMode: suggestedMode,
-              })));
-              
-              setMessages(prev => [...prev, { 
-                text: response, 
-                isUser: false,
-                isConfirmation: true,
-                pendingTasks: allParsedTasks
-              }]);
-              setMessage('');
-              setAttachedFiles([]);
-              return;
-            } else {
-              // Auto-create tasks (no mode mismatch, small number)
-              const tasksToCreate = allParsedTasks.map(t => ({
-                ...t,
-                scheduledDate: 'Nov 10',
-                scheduledTime: '10:00 AM',
-                deadline: 'Nov 15',
-                imageUrl: 'https://images.unsplash.com/photo-1699570044128-b61ef113b72e?w=400',
-              }));
-              
-              if (onCreateTasks) {
-                onCreateTasks(tasksToCreate);
-                response = `✅ Perfect! I've created ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''} on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard:\n\n   ${taskList}\n\n💡 Check your dashboard to see them! They're in the Pending column and ready to go.`;
-              } else {
-                response = `✅ I've identified ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''}:\n\n   ${taskList}\n\n💡 Ready to create them!`;
-              }
-            }
-          } else if (message.toLowerCase().includes('team') || message.toLowerCase().includes('workload')) {
-            // Team analysis
-            if (appMode === 'team' && tasks.length > 0) {
-              const teamMembers = Array.from(new Set(tasks.map((t: any) => t.assignee)));
-              const workloadAnalysis = teamMembers.map(member => {
-                const memberTasks = tasks.filter((t: any) => t.assignee === member);
-                const completed = memberTasks.filter((t: any) => t.status === 'Completed').length;
-                const inProgress = memberTasks.filter((t: any) => t.status === 'In Progress').length;
-                const pending = memberTasks.filter((t: any) => t.status === 'Pending').length;
-                const total = memberTasks.length;
-                const capacity = Math.min(95, (total * 15) + Math.random() * 20);
-                
-                return { member, total, completed, inProgress, pending, capacity: Math.round(capacity) };
-              }).sort((a, b) => b.capacity - a.capacity);
-              
-              response = '👥 Team Workload Analysis:\n\n';
-              workloadAnalysis.forEach(m => {
-                const status = m.capacity > 80 ? '⚠️' : m.capacity > 60 ? '✅' : '💚';
-                response += `${status} ${m.member}: ${m.total} tasks (${m.capacity}% capacity)\n   ${m.completed} completed, ${m.inProgress} in progress, ${m.pending} pending\n\n`;
-              });
-            } else {
-              response = '👥 To analyze team workload, please switch to Team Mode or tell me about your tasks!';
-            }
-          } else {
-            response = '📋 I\'m ready to help! Try:\n\n• "I need to finish the report, design the homepage, and review the code by Friday"\n• "Create tasks for my team: database update, API testing, and UI review"\n• "What\'s my team\'s workload?"\n\nJust tell me naturally what needs to be done!';
-          }
-          break;
-          
-        case 'gamer':
-          response = '🎯 Quest accepted! +50 XP. Ready to level up?';
-          break;
-        case 'coach':
-          response = '🔥 THAT\'S THE SPIRIT! Let\'s crush this together!';
-          break;
-        case 'mentor':
-          response = '📚 Great question. Let me share some strategic insights...';
-          break;
-        default:
-          response = 'How can I help you today?';
-      }
-      
-      setMessages(prev => [...prev, { text: response, isUser: false }]);
-    }, 1000);
-    
     setMessage('');
     setAttachedFiles([]);
+    setIsLoading(true);
+
+    try {
+      let response = '';
+
+      if (selectedMode === 'plan') {
+        // Keep local task-parsing logic for Plan Mode
+        const { soloTasks, teamTasks, isTeamTask, isSoloTask, needsConfirmation, suggestedMode } = parseTasksFromMessage(
+          message, appMode, 'You'
+        );
+        const allParsedTasks = [...soloTasks, ...teamTasks];
+
+        if (allParsedTasks.length > 0) {
+          const taskList = allParsedTasks.map((t, i) => `${i + 1}. ${t.title} (${t.assignee})${t.status === 'Completed' ? ' ✅' : t.status === 'In Progress' ? ' 🔄' : ''}`).join('\n   ');
+
+          if (needsConfirmation) {
+            if (isTeamTask && !isSoloTask && appMode === 'solo') {
+              response = `🎯 I found ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''} for your team:\n\n   ${taskList}\n\n⚠️ You're in Solo Mode. Should I:\n\n1️⃣ Switch to Team Mode and create these there?\n2️⃣ Create them in Solo Mode assigned to you?`;
+            } else if (isSoloTask && !isTeamTask && appMode === 'team') {
+              response = `🎯 I found ${allParsedTasks.length} personal task${allParsedTasks.length > 1 ? 's' : ''} for you:\n\n   ${taskList}\n\n💡 You're in Team Mode. Should I:\n\n1️⃣ Switch to Solo Mode?\n2️⃣ Create them in Team Mode anyway?`;
+            } else {
+              response = `🎯 I found ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''}:\n\n   ${taskList}\n\nWould you like me to create these on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard?`;
+            }
+            setPendingTasksToCreate(allParsedTasks.map(t => ({
+              ...t, scheduledDate: 'Nov 10', scheduledTime: '10:00 AM', deadline: 'Nov 15', suggestedMode,
+            })));
+            setMessages(prev => [...prev, { text: response, isUser: false, isConfirmation: true, pendingTasks: allParsedTasks }]);
+            setIsLoading(false);
+            return;
+          } else {
+            const tasksToCreate = allParsedTasks.map(t => ({
+              ...t, scheduledDate: 'Nov 10', scheduledTime: '10:00 AM', deadline: 'Nov 15',
+              imageUrl: 'https://images.unsplash.com/photo-1699570044128-b61ef113b72e?w=400',
+            }));
+            if (onCreateTasks) {
+              onCreateTasks(tasksToCreate);
+              response = `✅ Created ${allParsedTasks.length} task${allParsedTasks.length > 1 ? 's' : ''} on your ${appMode === 'solo' ? 'Solo' : 'Team'} dashboard:\n\n   ${taskList}\n\n💡 Check your Pending column!`;
+            }
+          }
+        } else {
+          // Fall back to Gemini for general plan-mode questions
+          const systemCtx = `You are TaskMate AI in Plan Mode. Help the user organize and plan their tasks. Be concise and actionable. Current mode: ${appMode}.`;
+          response = await callGeminiAPI(message, systemCtx);
+        }
+
+      } else if (selectedMode === 'gamer') {
+        const systemCtx = `You are TaskMate AI in Gamer Mode. Respond in an energetic, gamified way. Use gaming language (XP, quests, boss battles, level up). Keep responses short and hype. Current tasks: ${tasks.length}.`;
+        response = await callGeminiAPI(message, systemCtx);
+
+      } else if (selectedMode === 'coach') {
+        const systemCtx = `You are TaskMate AI in Coach Mode. You are an intense, motivational coach. Be direct, energetic, and accountable. Push the user to achieve their goals. Keep it punchy and motivating.`;
+        response = await callGeminiAPI(message, systemCtx);
+
+      } else if (selectedMode === 'mentor') {
+        const systemCtx = `You are TaskMate AI in Mentor Mode. Be thoughtful, strategic, and wise. Give career advice, productivity tips, and growth insights. Be calm, measured, and insightful.`;
+        response = await callGeminiAPI(message, systemCtx);
+
+      } else {
+        response = 'How can I help you today?';
+      }
+
+      setMessages(prev => [...prev, { text: response, isUser: false }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { text: '⚠️ Something went wrong. Please try again.', isUser: false }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOpen = () => {
@@ -791,6 +761,27 @@ export function EnhancedAIChatButton({ currentMode: appMode = 'solo', tasks = []
                   </div>
                 )}
 
+                {/* Typing indicator */}
+                {isLoading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    className="flex justify-start px-4 pb-2"
+                  >
+                    <div className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white/5 border border-white/10">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="w-2 h-2 rounded-full bg-purple-400"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15 }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Input */}
                 <div className="p-4 border-t border-white/5 bg-white/5">
                   <div className="flex gap-2 mb-2">
@@ -822,10 +813,11 @@ export function EnhancedAIChatButton({ currentMode: appMode = 'solo', tasks = []
                       className="flex-1 px-4 py-3 bg-[#1C1F26] border border-[#232834] rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-purple-500/50 transition-colors"
                     />
                     <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: isLoading ? 1 : 1.05 }}
+                      whileTap={{ scale: isLoading ? 1 : 0.95 }}
                       onClick={handleSend}
-                      className={`px-4 py-3 bg-gradient-to-br ${currentMode?.color || 'from-purple-600 to-blue-600'} rounded-xl text-white`}
+                      disabled={isLoading}
+                      className={`px-4 py-3 bg-gradient-to-br ${currentMode?.color || 'from-purple-600 to-blue-600'} rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity`}
                     >
                       <Send className="w-5 h-5" />
                     </motion.button>

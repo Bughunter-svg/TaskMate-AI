@@ -379,8 +379,23 @@ export default function App() {
                           </p>
                         </div>
 
-                        {/* Category Summary Cards and Bell Icon */}
-                        <div className="flex items-center gap-3">
+                      {/* Filter Bar */}
+                      <TaskFilterBar
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        priorityFilter={priorityFilter}
+                        onPriorityChange={setPriorityFilter}
+                        categoryFilter={categoryFilter}
+                        onCategoryChange={setCategoryFilter}
+                        tagFilter={tagFilter}
+                        onTagChange={setTagFilter}
+                        availableTags={availableTags}
+                        totalCount={soloTasks.length}
+                        filteredCount={filteredSoloTasks.length}
+                      />
+
+                      {/* Category Summary Cards and Bell Icon */}
+                      <div className="flex items-center gap-3 justify-end">
                           <CategorySummary
                             category="Personal"
                             totalTasks={personalTasks.length}
@@ -420,7 +435,7 @@ export default function App() {
                                   </span>
                                 </div>
                                 <div className="space-y-3">
-                                  {soloTasks
+                                  {filteredSoloTasks
                                     .filter(task => task.status === 'Completed')
                                     .map((task, index) => (
                                       <DraggableTaskCard key={task.id} taskId={task.id} status={task.status}>
@@ -429,6 +444,8 @@ export default function App() {
                                           description={task.description}
                                           completedBy={task.completedBy || 'You'}
                                           index={index}
+                                          priority={task.priority}
+                                          tags={task.tags}
                                           onDelete={() => handleDeleteTask(task.id)}
                                           onClick={() => handleTaskClick(task)}
                                         />
@@ -453,7 +470,7 @@ export default function App() {
                                   </span>
                                 </div>
                                 <div className="space-y-3">
-                                  {soloTasks
+                                  {filteredSoloTasks
                                     .filter(task => task.status === 'In Progress')
                                     .map((task, index) => (
                                       <DraggableTaskCard key={task.id} taskId={task.id} status={task.status}>
@@ -467,8 +484,13 @@ export default function App() {
                                           imageUrl={task.imageUrl}
                                           isShared={task.isShared}
                                           index={index}
+                                          priority={task.priority}
+                                          tags={task.tags}
+                                          deadline={task.deadline}
+                                          taskId={task.id}
                                           onDelete={() => handleDeleteTask(task.id)}
                                           onClick={() => handleTaskClick(task)}
+                                          onFocus={handleFocusStart}
                                         />
                                       </DraggableTaskCard>
                                     ))}
@@ -702,6 +724,17 @@ export default function App() {
           onAddTask={handleAddTask}
           mode={mode}
         />
+
+        <AnimatePresence>
+          {focusTaskId && (
+            <FocusModeWidget
+              taskId={focusTaskId}
+              taskTitle={focusTaskTitle}
+              onClose={() => setFocusTaskId(null)}
+              onSessionComplete={handleFocusSessionComplete}
+            />
+          )}
+        </AnimatePresence>
 
         <TaskDetailDialog
           task={selectedTask}

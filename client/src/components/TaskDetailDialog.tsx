@@ -3,6 +3,9 @@ import { X, Calendar, Clock, User, Tag, Flag, TrendingUp, Image as ImageIcon } f
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { DeadlineBadge } from './DeadlineBadge';
+
+type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 
 interface Task {
   id: string;
@@ -20,6 +23,9 @@ interface Task {
   progress?: number;
   imageUrl?: string;
   deadline?: string;
+  priority?: Priority;
+  tags?: string[];
+  focusSessions?: number;
 }
 
 interface TaskDetailDialogProps {
@@ -28,19 +34,29 @@ interface TaskDetailDialogProps {
   onClose: () => void;
 }
 
+const priorityConfig: Record<Priority, { color: string; bg: string; border: string; dot: string }> = {
+  Low:      { color: 'text-green-400',  bg: 'bg-green-500/10',  border: 'border-green-500/20',  dot: 'bg-green-500' },
+  Medium:   { color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', dot: 'bg-yellow-500' },
+  High:     { color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', dot: 'bg-orange-500' },
+  Critical: { color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/20',    dot: 'bg-red-500' },
+};
+
 export function TaskDetailDialog({ task, isOpen, onClose }: TaskDetailDialogProps) {
   if (!task) return null;
 
   const statusColors = {
-    'Completed': 'bg-green-500/10 text-green-400 border-green-500/20',
+    'Completed':   'bg-green-500/10 text-green-400 border-green-500/20',
     'In Progress': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    'Pending': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+    'Pending':     'bg-orange-500/10 text-orange-400 border-orange-500/20',
   };
 
   const categoryColors = {
     'Business': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     'Personal': 'bg-pink-500/10 text-pink-400 border-pink-500/20',
   };
+
+  const priority = task.priority ?? 'Medium';
+  const pc = priorityConfig[priority];
 
   return (
     <AnimatePresence>
@@ -66,7 +82,7 @@ export function TaskDetailDialog({ task, isOpen, onClose }: TaskDetailDialogProp
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-2xl bg-[#1C1F26] border border-[#232834] rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl bg-[#1C1F26] border border-[#232834] rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
             >
               {/* Close Button */}
               <button
@@ -90,16 +106,42 @@ export function TaskDetailDialog({ task, isOpen, onClose }: TaskDetailDialogProp
 
               {/* Content */}
               <div className={`p-8 ${task.imageUrl ? '-mt-12 relative z-10' : ''}`}>
-                {/* Title and Status */}
+                {/* Title, Status, Priority */}
                 <div className="space-y-4 mb-6">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 flex-wrap">
                     <h2 className="text-white text-2xl flex-1">{task.title}</h2>
-                    <Badge className={`${statusColors[task.status]} border px-3 py-1`}>
-                      {task.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {/* Priority badge */}
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${pc.bg} ${pc.border} ${pc.color}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${pc.dot}`} />
+                        {priority}
+                      </span>
+                      <Badge className={`${statusColors[task.status]} border px-3 py-1`}>
+                        {task.status}
+                      </Badge>
+                    </div>
                   </div>
-                  
+
                   <p className="text-white/60 leading-relaxed">{task.description}</p>
+
+                  {/* Deadline badge if present */}
+                  {task.deadline && task.status !== 'Completed' && (
+                    <DeadlineBadge deadline={task.deadline} status={task.status} />
+                  )}
+
+                  {/* Tags */}
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {task.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs"
+                        >
+                          <Tag className="w-3 h-3" />#{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Progress Bar for In Progress tasks */}
@@ -170,13 +212,17 @@ export function TaskDetailDialog({ task, isOpen, onClose }: TaskDetailDialogProp
                         </div>
                         <div>
                           <p className="text-white/40 text-xs mb-1">Deadline</p>
-                          <p className="text-white/90 text-sm">{task.deadline}</p>
+                          <p className="text-white/90 text-sm">
+                            {new Date(task.deadline).toLocaleString('en-US', {
+                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Started At (for In Progress) */}
+                  {/* Started At */}
                   {task.status === 'In Progress' && task.startedAt && (
                     <div className="p-4 rounded-xl bg-[#15181E] border border-[#232834]">
                       <div className="flex items-center gap-3">
@@ -201,6 +247,25 @@ export function TaskDetailDialog({ task, isOpen, onClose }: TaskDetailDialogProp
                         <div>
                           <p className="text-white/40 text-xs mb-1">Completed By</p>
                           <p className="text-white/90 text-sm">{task.completedBy}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Focus Sessions */}
+                  {(task.focusSessions ?? 0) > 0 && (
+                    <div className="p-4 rounded-xl bg-[#15181E] border border-[#232834]">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-purple-500/10">
+                          <Clock className="w-4 h-4 text-purple-400" />
+                        </div>
+                        <div>
+                          <p className="text-white/40 text-xs mb-1">Focus Sessions</p>
+                          <p className="text-white/90 text-sm flex items-center gap-1">
+                            {Array.from({ length: Math.min(task.focusSessions!, 8) }).map((_, i) => (
+                              <span key={i} className="text-purple-400">🍅</span>
+                            ))}
+                          </p>
                         </div>
                       </div>
                     </div>

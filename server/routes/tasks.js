@@ -23,6 +23,8 @@ router.post("/", async (req, res) => {
       startedAt,
       progress,
       imageUrl,
+      priority,
+      tags,
     } = req.body;
 
     if (!userId || !title) {
@@ -46,6 +48,8 @@ router.post("/", async (req, res) => {
       startedAt: startedAt || "",
       progress: progress || 0,
       imageUrl: imageUrl || "",
+      priority: priority || "Medium",
+      tags: tags || [],
       status: "Pending",
     });
 

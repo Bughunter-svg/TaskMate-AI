@@ -1,8 +1,18 @@
 import { motion } from 'motion/react';
-import { User, Calendar, Users, Trash2 } from 'lucide-react';
+import { User, Calendar, Users, Trash2, Tag } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState } from 'react';
+import { DeadlineBadge } from './DeadlineBadge';
+
+type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
+
+const priorityConfig: Record<Priority, { dot: string; text: string; border: string; bg: string }> = {
+  Low:      { dot: 'bg-green-500',  text: 'text-green-400',  border: 'border-green-500/20',  bg: 'bg-green-500/10' },
+  Medium:   { dot: 'bg-yellow-500', text: 'text-yellow-400', border: 'border-yellow-500/20', bg: 'bg-yellow-500/10' },
+  High:     { dot: 'bg-orange-500', text: 'text-orange-400', border: 'border-orange-500/20', bg: 'bg-orange-500/10' },
+  Critical: { dot: 'bg-red-500',    text: 'text-red-400',    border: 'border-red-500/20',    bg: 'bg-red-500/10' },
+};
 
 interface PendingTaskCardProps {
   title: string;
@@ -11,9 +21,12 @@ interface PendingTaskCardProps {
   scheduledTime: string;
   assignee: string;
   index: number;
-  showAssignee?: boolean; // For team mode
+  showAssignee?: boolean;
   imageUrl?: string;
   isShared?: boolean;
+  deadline?: string;
+  priority?: Priority;
+  tags?: string[];
   onDelete?: () => void;
   onClick?: () => void;
 }
@@ -28,10 +41,14 @@ export function PendingTaskCard({
   showAssignee = true,
   imageUrl,
   isShared = false,
+  deadline = '',
+  priority = 'Medium',
+  tags = [],
   onDelete,
   onClick
 }: PendingTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const pc = priorityConfig[priority];
 
   return (
     <motion.div
@@ -86,18 +103,43 @@ export function PendingTaskCard({
       )}
 
       <div className="p-4 space-y-3">
-        {/* Title */}
+        {/* Priority + Title */}
         <div className="flex items-start gap-2">
           <Calendar className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-          <h4 className="text-white/90 line-clamp-2 leading-snug flex-1">
-            {title}
-          </h4>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium border ${pc.bg} ${pc.border} ${pc.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${pc.dot}`} />
+                {priority}
+              </span>
+              {deadline && (
+                <DeadlineBadge deadline={deadline} status="Pending" compact />
+              )}
+            </div>
+            <h4 className="text-white/90 line-clamp-2 leading-snug flex-1">
+              {title}
+            </h4>
+          </div>
         </div>
 
         {/* Description */}
         <p className="text-white/40 text-sm line-clamp-2 leading-relaxed">
           {description}
         </p>
+
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px]">
+                <Tag className="w-2.5 h-2.5" />#{tag}
+              </span>
+            ))}
+            {tags.length > 3 && (
+              <span className="text-[10px] text-white/20">+{tags.length - 3}</span>
+            )}
+          </div>
+        )}
 
         {/* Assignee (Team mode) */}
         {showAssignee && (

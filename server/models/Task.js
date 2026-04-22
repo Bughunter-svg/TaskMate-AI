@@ -26,6 +26,13 @@ const TaskSchema = new mongoose.Schema(
     imageUrl: { type: String, default: "" },
     completedBy: { type: String, default: "" },
     completedAt: { type: Date, default: null },
+    priority: {
+      type: String,
+      enum: ["Low", "Medium", "High", "Critical"],
+      default: "Medium",
+    },
+    tags: { type: [String], default: [] },
+    focusSessions: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

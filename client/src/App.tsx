@@ -30,6 +30,12 @@ import { TaskDetailDialog } from './components/TaskDetailDialog';
 import { DailyReportAnalysis } from './components/DailyReportAnalysis';
 import { ThanosSnapOverlay } from './components/ThanosSnapOverlay';
 import { WelcomeBanner } from './components/WelcomeBanner';
+import { TaskFilterBar } from './components/TaskFilterBar';
+import { FocusModeWidget } from './components/FocusModeWidget';
+
+type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
+type PriorityFilter = 'All' | Priority;
+type CategoryFilter = 'All' | 'Business' | 'Personal';
 
 interface Task {
   id: string;
@@ -47,6 +53,9 @@ interface Task {
   progress?: number;
   imageUrl?: string;
   deadline?: string;
+  priority?: Priority;
+  tags?: string[];
+  focusSessions?: number;
 }
 
 const API = 'https://taskmate-ai-hy5o.onrender.com/api/tasks';
@@ -68,6 +77,16 @@ export default function App() {
   const [snapTaskTitle, setSnapTaskTitle] = useState('');
   const [nextTask, setNextTask] = useState<{ title: string; date?: string; time?: string } | null>(null);
 
+  // Feature 2 — Search & Filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('All');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('All');
+  const [tagFilter, setTagFilter] = useState('');
+
+  // Feature 5 — Focus Mode
+  const [focusTaskId, setFocusTaskId] = useState<string | null>(null);
+  const [focusTaskTitle, setFocusTaskTitle] = useState('');
+
   /* =========================
      LOAD TASKS (FIXED)
   ========================= */
@@ -79,7 +98,16 @@ export default function App() {
         const res = await fetch(`${API}/${currentUser.username}`);
         const data = await res.json();
         if (data.success) {
-          setTasks(data.tasks || []);
+          const loaded: Task[] = data.tasks || [];
+          setTasks(loaded);
+          // Feature 3 — overdue alert on login
+          const now = new Date();
+          const overdue = loaded.filter(
+            t => t.deadline && t.status !== 'Completed' && new Date(t.deadline) < now
+          );
+          if (overdue.length > 0) {
+            toast.error(`⚠️ You have ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}!`, { duration: 5000 });
+          }
         } else {
           toast.error('Failed to load tasks');
         }
@@ -162,6 +190,28 @@ export default function App() {
   };
 
   /* =========================
+     FOCUS MODE HANDLER
+  ========================= */
+  const handleFocusStart = (taskId: string, title: string) => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    setFocusTaskId(taskId);
+    setFocusTaskTitle(title);
+  };
+
+  const handleFocusSessionComplete = async (taskId: string) => {
+    setTasks(prev => prev.map(t =>
+      t.id === taskId ? { ...t, focusSessions: (t.focusSessions || 0) + 1 } : t
+    ));
+    await fetch(`${API}/${taskId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.username, focusSessions: (tasks.find(t => t.id === taskId)?.focusSessions || 0) + 1 }),
+    });
+  };
+
+  /* =========================
      DERIVED DATA
   ========================= */
   const soloTasks = tasks.filter(t => t.assignee === 'You');
@@ -175,6 +225,21 @@ export default function App() {
   const businessTasks = soloTasks.filter(t => t.category === 'Business');
   const personalCompleted = personalTasks.filter(t => t.status === 'Completed').length;
   const businessCompleted = businessTasks.filter(t => t.status === 'Completed').length;
+
+  // Feature 2 — filter logic
+  const applyFilters = (taskList: Task[]) =>
+    taskList.filter(t => {
+      if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !t.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (priorityFilter !== 'All' && t.priority !== priorityFilter) return false;
+      if (categoryFilter !== 'All' && t.category !== categoryFilter) return false;
+      if (tagFilter && !(t.tags || []).includes(tagFilter)) return false;
+      return true;
+    });
+
+  const filteredSoloTasks = applyFilters(soloTasks);
+  const filteredAllTasks = applyFilters(tasks);
+  const availableTags = [...new Set(soloTasks.flatMap(t => t.tags || []))];
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
